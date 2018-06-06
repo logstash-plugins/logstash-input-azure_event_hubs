@@ -1,0 +1,200 @@
+:plugin: azure_event_hubs
+:type: input
+:default_codec: plain
+
+///////////////////////////////////////////
+START - GENERATED VARIABLES, DO NOT EDIT!
+///////////////////////////////////////////
+:version: %VERSION%
+:release_date: %RELEASE_DATE%
+:changelog_url: %CHANGELOG_URL%
+:include_path: ../../../../logstash/docs/include
+///////////////////////////////////////////
+END - GENERATED VARIABLES, DO NOT EDIT!
+///////////////////////////////////////////
+
+[id="plugins-{type}s-{plugin}"]
+
+=== Azure Event Hubs plugin
+
+include::{include_path}/plugin_header.asciidoc[]
+
+==== Description
+
+Consumes events from https://azure.microsoft.com/en-us/services/event-hubs[Azure Event Hubs]. Azure Event Hubs is a highly scalable data streaming platform and event ingestion service. Event producers send events to the Azure Event Hub and this plugin can consume those events for use with Logstash.
+
+Many Azure services integrate with the Azure Event Hubs, such as https://docs.microsoft.com/en-us/azure/monitoring-and-diagnostics/monitoring-overview-azure-monitor[Azure Monitor] to provide many infrastructure metrics.
+
+===== Accepting events from Azure Event Hubs
+
+This plugin supports two modes of configuration, basic (default) and advanced. Examples for both modes will be provided.
+
+Both modes require the connection string to one or more Azure Event Hub. A connection string to an Azure Event Hub can be found via the https://portal.azure.com[Azure Portal] -> Event Hub -> Shared access polices.
+
+An example Event Hub connection string:
+
+```
+Endpoint=sb://logstash.servicebus.windows.net/;SharedAccessKeyName=activity-log-read-only;SharedAccessKey=mm6AbDcEfj8lk7sjsbzoTJ10qAkiSaG663YykEAG2eg=;EntityPath=insights-operational-logs
+```
+
+In addition to an Event Hub connection string, a connection string to an https://azure.microsoft.com/en-us/services/storage/blobs[Azure Blob Storage account] is *HIGHLY* recommended. A Blob Storage account serves as a central location to allow multiple instances of Logstash to work together and each instance will process a share of the total events. A blog storage account also serves as a place to record the offset (location) of already processed events in the case of a restart, allowing Logstash to pick up exactly where it left off upon restart.
+
+Using this plugin without a Blob Storage account is only acceptable if you plan to run a single instance of Logstash and find that a duplicate events on restart are acceptable.
+
+A connection string to Blob Storage can be found via the https://portal.azure.com[Azure Portal] -> Blob Storage account -> Access keys.
+
+An example Blob Storage connection string:
+
+```
+DefaultEndpointsProtocol=https;AccountName=logstash;AccountKey=ETOPnkd/hDAWidkEpPZDiXffQPku/SZdXhPSLnfqdRTalssdEuPkZwIcouzXjCLb/xPZjzhmHfwRCGo0SBSw==;EndpointSuffix=core.windows.net
+```
+
+Logstash instances should be configured to use the same `storage_connection`, and if set `storage_container` and/or `consumer_group` are set, they should be the same to ensure that Logstash instances are properly working together.
+
+=== Basic Configuration (default)
+
+Basic configuration is the default and allows consuming from multiple Event Hubs. All Events Hubs, except for the connection string, share the same configuration.
+
+```
+input {
+   azure_event_hubs {
+      threads => 8
+      decorate_events => true
+      consumer_group => "logstash"
+      storage_connection => "DefaultEndpointsProtocol=https;AccountName=example...."
+      event_hub_connections => ["Endpoint=sb://example1...EntityPath=insights-logs-errors", "Endpoint=sb://example2...EntityPath=insights-metrics-pt1m"]
+   }
+}
+```
+_note_ the Event Hub connection configuration option here is `event_hub_connections` (plural).
+
+=== Advanced Configuration
+
+Advanced configuration is for when the Event Hubs need different configurations. For example in a large organization, one team may be tasked with consuming from data from multiple Event Hubs, with many teams producing data to Event Hubs with a variety of configurations.
+
+```
+input {
+   azure_event_hubs {
+     threads => 8
+     decorate_events => "true"
+     storage_connection => "DefaultEndpointsProtocol=https;AccountName=example...."
+     config_mode => "ADVANCED"
+     event_hubs => [
+        {"insights-operational-logs" => {
+         event_hub_connection => "Endpoint=sb://example1..."
+         initial_position => "HEAD"
+         consumer_group => "iam_team"
+        }},
+      {"insights-metrics-pt1m" => {
+         event_hub_connection => "Endpoint=sb://example2..."
+         initial_position => "TAIL"
+         consumer_group => "db_team"
+       }}
+     ]
+   }
+}
+```
+
+In the above configuration all Event Hubs will use the same `storage_connection` and will decorate the events from both Event Hubs since that configuration is 'global' to all of the Event Hubs. However, the two configured Event Hubs will use different `consumer_groups` and `initial_position` configuration since that configuration is specific to that Event Hub. If the same configuration appears in both the 'global' and specific sections, the more specific configuration will take precedence.
+
+Most configuration options may be expressed per Event Hub.
+
+_note_ the Event Hub connection configuration option here is `event_hub_connection` (singular).
+
+[id="plugins-{type}s-{plugin}-options"]
+==== Azure Event Hubs Configuration Options
+
+This plugin supports the following configuration options plus the <<plugins-{type}s-{plugin}-common-options>> described later.
+
+[cols="<,<,<",options="header",]
+|=======================================================================
+|Setting |Input type|Required
+| <<plugins-{type}s-{plugin}-config_mode>> |<<string,string>>, one of `["BASIC", "ADVANCED"]|No
+| <<plugins-{type}s-{plugin}-event_hubs>> |<<array,array>>|No, unless `config_mode => "ADVANCED"`
+| <<plugins-{type}s-{plugin}-event_hub_connections>> |<<array,array>>|Yes, unless `config_mode => "ADVANCED"`
+| <<plugins-{type}s-{plugin}-storage_connection>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-storage_container>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-threads>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-consumer_group>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-max_batch_size>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-receive_timeout>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-initial_position>> |<<string,string>>, one of `["HEAD", "TAIL", "LOOK_BACK"]|No
+| <<plugins-{type}s-{plugin}-initial_position_look_back>> |<<boolean,boolean>>|No, unless `initial_position => "LOOK_BACK"`
+| <<plugins-{type}s-{plugin}-checkpoint_interval>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-decorate_events>> |<<boolean,boolean>>|No
+|=======================================================================
+
+Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
+input plugins.
+
+&nbsp;
+
+[id="plugins-{type}s-{plugin}-config_mode"]
+===== `config_mode`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-event_hubs"]
+===== `event_hubs`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-event_hub_connections"]
+===== `event_hub_connections`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-storage_connection"]
+===== `storage_connection`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-storage_container"]
+===== `storage_container`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-threads"]
+===== `threads`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-consumer_group"]
+===== `consumer_group`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-max_batch_size"]
+===== `max_batch_size`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-receive_timeout"]
+===== `receive_timeout`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-initial_position"]
+===== `initial_position`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-initial_position_look_back"]
+===== `initial_position_look_back`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-checkpoint_interval"]
+===== `checkpoint_interval`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-decorate_events"]
+===== `decorate_events`
+
+TODO
+
+[id="plugins-{type}s-{plugin}-common-options"]
+include::{include_path}/{type}.asciidoc[]
+
+:default_codec!:
