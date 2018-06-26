@@ -1,0 +1,9 @@
+Gemfile.lock
+*.gem
+.raketasks
+vendor/
+.gradle
+build/
+*.iml
+target/
+dependency-reduced-pom.xml

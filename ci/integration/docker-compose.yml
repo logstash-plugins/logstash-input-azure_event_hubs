@@ -1,0 +1,39 @@
+version: '3'
+
+# start testbed:  docker-compose up --force-recreate
+# manual:  docker-compose run logstash1 bash
+
+services:
+
+  logstash1:
+    image: docker.elastic.co/logstash/logstash-oss:$ELASTIC_STACK_VERSION
+    volumes:
+      - ./no_storage.config:/usr/share/logstash/no_storage.config
+      - ./with_storage.config:/usr/share/logstash/with_storage.config
+      - ./this.gem:/usr/share/logstash/this.gem
+      - ./command.sh:/usr/share/logstash/command.sh
+    command: /usr/share/logstash/command.sh ${LS_ARGS}
+    ports:
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      JARS_SKIP: "true"
+      ENV1: ${ENV1}
+      ENV2: ${ENV2}
+
+
+  logstash2:
+    image: docker.elastic.co/logstash/logstash-oss:$ELASTIC_STACK_VERSION
+    volumes:
+      - ./no_storage.config:/usr/share/logstash/no_storage.config
+      - ./with_storage.config:/usr/share/logstash/with_storage.config
+      - ./this.gem:/usr/share/logstash/this.gem
+      - ./command.sh:/usr/share/logstash/command.sh
+    command: /usr/share/logstash/command.sh ${LS_ARGS}
+    ports:
+      - "9601:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      JARS_SKIP: "true"
+      ENV1: ${ENV1}
+      ENV2: ${ENV2}
