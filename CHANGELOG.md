@@ -1,3 +1,7 @@
+## 1.0.2
+- Fixed minor doc issues
+- Changed doc to hardcode `Logstash` rather than using an attribute.
+
 ## 1.0.1
  - Fixed logging for exception handler
 

@@ -48,10 +48,10 @@ Endpoint=sb://logstash.servicebus.windows.net/;SharedAccessKeyName=activity-log-
 ===== Blob Storage and connection string
 
 https://azure.microsoft.com/en-us/services/storage/blobs[Azure Blob Storage
-account] is an essential part of Azure-to-{ls} configuration. 
+account] is an essential part of Azure-to-Logstash configuration. 
 A Blob Storage account is a central location that enables multiple instances of
-{ls} to work together to process events. It records the
-offset (location) of processed events. On restart, {ls} resumes processing
+Logstash to work together to process events. It records the
+offset (location) of processed events. On restart, Logstash resumes processing
 exactly where it left off.
 
 Configuration notes:
@@ -59,7 +59,7 @@ Configuration notes:
 *  A Blob Storage account is highly recommended for use with this plugin, and is
 likely required for production servers.
 * The `storage_connection` option passes the blob storage connection string. 
-* Configure all {ls} instances to use the same `storage_connection` to get the
+* Configure all Logstash instances to use the same `storage_connection` to get the
 benefits of shared processing.
 
 Sample Blob Storage connection string:
@@ -77,11 +77,11 @@ https://portal.azure.com[Azure Portal]`-> Blob Storage account -> Access keys`.
 Here are some guidelines to help you avoid data conflicts that can cause lost
 events.
 
-* **Create a {ls} consumer group.** 
-Create a new consumer group specifically for {ls}}. Do not use the $default or
+* **Create a Logstash consumer group.** 
+Create a new consumer group specifically for Logstash. Do not use the $default or
 any other consumer group that might already be in use. Reusing consumer groups
-among non-related consumers can cause expected behavior and possibly lost
-events. All [ls] instances should use the same consumer group so that they can
+among non-related consumers can cause unexpected behavior and possibly lost
+events. All Logstash instances should use the same consumer group so that they can
 work together for processing events.
 * **Avoid overwriting offset with multiple Event Hubs.** 
 The offsets (position) of the Event Hubs are stored in the configured Azure Blob
@@ -289,7 +289,7 @@ azure_event_hubs {
 * Set to `0` to disable.
   
 Interval in seconds to write checkpoints during batch processing. Checkpoints
-tell {ls} where to resume processing after a restart. Checkpoints are
+tell Logstash where to resume processing after a restart. Checkpoints are
 automatically written at the end of each batch, regardless of this setting. 
 
 Writing checkpoints too frequently can slow down processing unnecessarily. 
@@ -368,7 +368,7 @@ azure_event_hubs {
 
 Number of seconds to look back to find the initial position for pre-existing
 events. This option is used only if `initial_position` is set to `look_back`. If
-`storage_connection` is set, this configuration applies only the first time {ls}
+`storage_connection` is set, this configuration applies only the first time Logstash
 reads from the Event Hub. 
 
 [source,ruby]
@@ -425,7 +425,7 @@ azure_event_hubs {
 * Value type is <<string,string>>
 * Defaults to the Event Hub name if not defined
 
-Name of the storage container used to persist offsets and allow multiple instances of {ls}
+Name of the storage container used to persist offsets and allow multiple instances of Logstash
 to work together. 
  
 [source,ruby]
