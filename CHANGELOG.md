@@ -1,3 +1,8 @@
+## 1.0.3
+- Fixed doc issues
+  - Changed `event-hub-connections` to `event_hub_connections`
+  - Added emphasis for singular vs. plural for event_hub_connections
+
 ## 1.0.2
 - Fixed minor doc issues
 - Changed doc to hardcode `Logstash` rather than using an attribute.

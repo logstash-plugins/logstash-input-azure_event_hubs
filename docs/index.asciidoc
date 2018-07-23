@@ -194,8 +194,8 @@ input plugins.
 
 NOTE: All Event Hubs options are common to both basic and advanced
 configurations, with the following exceptions. The basic configuration uses
-`event-hub-connections`. The the advanced configuration uses `event_hubs` and
-`event_hub_connection`.
+`event_hub_connections` to support multiple connections. The advanced
+configuration uses `event_hubs` and `event_hub_connection` (singular).
 
 [id="plugins-{type}s-{plugin}-config_mode"]
 ===== `config_mode`
