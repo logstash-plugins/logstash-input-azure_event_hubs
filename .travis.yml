@@ -9,8 +9,8 @@ language: ruby
 matrix:
   include:
   - env: ELASTIC_STACK_VERSION=5.6.9
-  - env: ELASTIC_STACK_VERSION=6.2.4
-  - env: ELASTIC_STACK_VERSION=6.3.0-SNAPSHOT
+  - env: ELASTIC_STACK_VERSION=6.3.1
+  - env: ELASTIC_STACK_VERSION=6.4.0-SNAPSHOT
   - env: ELASTIC_STACK_VERSION=7.0.0-alpha1-SNAPSHOT
   fast_finish: true
 install: true
