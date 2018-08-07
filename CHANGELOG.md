@@ -1,3 +1,6 @@
+## 1.0.4
+- Added guidelines for setting number of threads
+
 ## 1.0.3
 - Fixed doc issues
   - Changed `event-hub-connections` to `event_hub_connections`

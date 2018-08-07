@@ -72,6 +72,7 @@ DefaultEndpointsProtocol=https;AccountName=logstash;AccountKey=ETOPnkd/hDAWidkEp
 Find the connection string to Blob Storage here: 
 https://portal.azure.com[Azure Portal]`-> Blob Storage account -> Access keys`.
 
+[id="plugins-{type}s-{plugin}-best-practices"]
 ===== Best practices
 
 Here are some guidelines to help you avoid data conflicts that can cause lost
@@ -93,6 +94,17 @@ sure that at least one of these options is different per Event Hub:
 ** storage_connection
 ** storage_container (defaults to Event Hub name if not defined)
 ** consumer_group
+* **Set number of threads correctly.** 
+The number of threads should equal the number of Event Hubs plus one (or more).
+Each Event Hub needs at least one thread. An additional thread is needed to help
+coordinate the other threads. The number of threads should not exceed the number
+of Event Hubs multiplied by the number of partitions per Event Hub plus one.
+Threads are currently available only as a global setting.
+** Sample scenario: Event Hubs = 4. Partitions on each Event Hub = 3.
+Minimum threads is 5 (4 Event Hubs plus one). Maximum threads is 13 (4 Event
+Hubs times 3 partitions plus one). 
+** If you’re collecting activity logs from one event hub instance, 
+then only 2 threads (1 Event Hub plus one) are required.
 
 [id="plugins-{type}s-{plugin}-eh_config_models"]
 ==== Configuration models
@@ -478,6 +490,8 @@ azure_event_hubs {
 }
 ----
 
+The number of threads should be the number of Event Hubs plus one or more. 
+See <<plugins-{type}s-{plugin}-best-practices>> for more information.
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
