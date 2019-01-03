@@ -4,7 +4,7 @@ services: docker
 addons:
   apt:
     packages:
-      - docker-ce
+    - docker-ce
 language: ruby
 matrix:
   include:
@@ -15,3 +15,4 @@ matrix:
   fast_finish: true
 install: true
 script: ci/unit/docker-test.sh
+before_install: gem install bundler -v '< 2'
