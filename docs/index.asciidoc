@@ -45,6 +45,8 @@ Sample connection string:
 Endpoint=sb://logstash.servicebus.windows.net/;SharedAccessKeyName=activity-log-read-only;SharedAccessKey=mm6AbDcEfj8lk7sjsbzoTJ10qAkiSaG663YykEAG2eg=;EntityPath=insights-operational-logs
 ----
 
+The default port used to connect to Azure is tcp/5671.
+
 ===== Blob Storage and connection string
 
 https://azure.microsoft.com/en-us/services/storage/blobs[Azure Blob Storage
