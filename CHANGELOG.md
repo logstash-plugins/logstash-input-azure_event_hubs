@@ -1,5 +1,5 @@
-## Unreleased
- - Updated Azure event hub library dependencies
+## 1.1.0
+ - Updated Azure event hub library dependencies[#27](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/27)
 
 ## 1.0.4
  - Added guidelines for setting number of threads
