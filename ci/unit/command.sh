@@ -8,5 +8,5 @@ gem install bundler -v '< 2'
 cd ../plugins/this
 cp /usr/share/logstash/logstash-core/versions-gem-copy.yml /usr/share/logstash/logstash-core-plugin-api/versions-gem-copy.yml
 ./gradlew vendor
-bundle install
+bundle install --verbose
 bundle exec rspec -fd --pattern spec/**/*_spec.rb,spec/**/*_specs.rb
