@@ -1,7 +1,6 @@
 ---
 sudo: required
 services: docker
-dist: trusty
 addons:
   apt:
     packages:
