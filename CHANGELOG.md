@@ -1,3 +1,6 @@
+## 1.1.2
+ - Added workaround to fix errors when using this plugin with Java 11[#38](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/38)
+
 ## 1.1.1
  - Updated Azure event hub library dependencies[#36](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/36)
 
