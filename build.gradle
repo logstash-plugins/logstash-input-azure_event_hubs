@@ -21,10 +21,9 @@ dependencies {
     compile 'com.microsoft.azure:azure-eventhubs-eph:2.4.0'
     compile 'com.microsoft.azure:azure-storage:8.0.0'
     runtime 'com.google.code.gson:gson:2.8.5'
-    runtime 'org.apache.qpid:proton-j:0.33.0'
+    runtime 'org.apache.qpid:proton-j:0.33.1'
     compile 'org.apache.logging.log4j:log4j-api:2.9.1'
     runtime 'org.apache.logging.log4j:log4j-slf4j-impl:2.9.1'
-
 }
 
 
