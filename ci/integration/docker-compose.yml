@@ -16,7 +16,7 @@ services:
     ports:
       - "9600:9600"
     environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      LS_JAVA_OPTS: "-Xmx512m -Xms512m"
       JARS_SKIP: "true"
       ENV1: ${ENV1}
       ENV2: ${ENV2}
@@ -33,7 +33,7 @@ services:
     ports:
       - "9601:9600"
     environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      LS_JAVA_OPTS: "-Xmx512m -Xms512m"
       JARS_SKIP: "true"
       ENV1: ${ENV1}
       ENV2: ${ENV2}
