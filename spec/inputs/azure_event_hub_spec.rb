@@ -1,6 +1,6 @@
 # encoding: utf-8
 require "logstash/devutils/rspec/spec_helper"
-require "logstash/inputs/azure_event_hubs"
+require "logstash/inputs/azureiothub"
 
 
 java_import com.microsoft.azure.eventprocessorhost.EventProcessorHost
@@ -16,7 +16,7 @@ java_import java.util.concurrent.atomic.AtomicInteger
 describe LogStash::Inputs::AzureEventHubs do
 
 
-  subject(:input) {LogStash::Plugin.lookup("input", "azure_event_hubs").new(config)}
+  subject(:input) {LogStash::Plugin.lookup("input", "azureiothub").new(config)}
 
   describe "Event Hubs Configuration -> " do
     shared_examples "an exploded Event Hub config" do |x|

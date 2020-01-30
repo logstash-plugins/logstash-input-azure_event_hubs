@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "logstash/util/loggable"
+require "json"
 module LogStash
   module Inputs
     module Azure
@@ -35,20 +36,34 @@ module LogStash
             batch_size += bytes.size
             @logger.trace("Event Hub: #{context.getEventHubPath.to_s}, Partition: #{context.getPartitionId.to_s}, Offset: #{payload.getSystemProperties.getOffset.to_s},"+
                               " Sequence: #{payload.getSystemProperties.getSequenceNumber.to_s}, Size: #{bytes.size}") if @logger.trace?
-
+            
             @codec.decode(bytes.to_a.pack('C*')) do |event|
-
               @decorator.call(event)
               if @meta_data
-                event.set("[@metadata][azure_event_hubs][name]", context.getEventHubPath)
-                event.set("[@metadata][azure_event_hubs][consumer_group]", context.getConsumerGroupName)
-                event.set("[@metadata][azure_event_hubs][processor_host]", context.getOwner)
-                event.set("[@metadata][azure_event_hubs][partition]", context.getPartitionId)
-                event.set("[@metadata][azure_event_hubs][offset]", payload.getSystemProperties.getOffset)
-                event.set("[@metadata][azure_event_hubs][sequence]", payload.getSystemProperties.getSequenceNumber)
-                event.set("[@metadata][azure_event_hubs][timestamp]",payload.getSystemProperties.getEnqueuedTime.getEpochSecond)
-                event.set("[@metadata][azure_event_hubs][event_size]", bytes.size)
+                event.set("[@metadata][azureiothub][name]", context.getEventHubPath)
+                event.set("[@metadata][azureiothub][consumer_group]", context.getConsumerGroupName)
+                event.set("[@metadata][azureiothub][processor_host]", context.getOwner)
+                event.set("[@metadata][azureiothub][partition]", context.getPartitionId)
+                event.set("[@metadata][azureiothub][offset]", payload.getSystemProperties.getOffset)
+                event.set("[@metadata][azureiothub][sequence]", payload.getSystemProperties.getSequenceNumber)
+                event.set("[@metadata][azureiothub][timestamp]",payload.getSystemProperties.getEnqueuedTime.getEpochSecond)
+                event.set("[@metadata][azureiothub][event_size]", bytes.size)
               end
+
+              event.set("enqueuedTimestamp", payload.getSystemProperties.getEnqueuedTime.getEpochSecond)
+              
+              hasDevId = payload.getSystemProperties.containsKey "iothub-connection-device-id"
+              if  hasDevId
+                deviceId = payload.getSystemProperties.get "iothub-connection-device-id"
+                event.set("connectionDeviceId", deviceId)
+              end
+
+              hasModId = payload.getSystemProperties.containsKey "iothub-connection-module-id"
+              if  hasModId
+                moduleId = payload.getSystemProperties.get "iothub-connection-module-id"
+                event.set("connectionModuleId", moduleId)
+              end
+
               @queue << event
               if @checkpoint_interval > 0
                 now = Time.now.to_i

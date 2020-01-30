@@ -1,14 +1,13 @@
 GEM_VERSION = File.read(File.expand_path(File.join(File.dirname(__FILE__), "VERSION"))).strip unless defined?(GEM_VERSION)
 
 Gem::Specification.new do |s|
-  s.name          = 'logstash-input-azure_event_hubs'
+  s.name          = 'logstash-input-azureiothub'
   s.version       = GEM_VERSION
   s.licenses      = ['Apache-2.0']
-  s.summary       = 'Consumes events from Azure Event Hubs for use with Logstash'
+  s.summary       = 'Consumes events from Azure IoT Hubs for use with Logstash'
   s.description   = 'This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program'
   s.homepage      = 'http://www.elastic.co/guide/en/logstash/current/index.html'
-  s.authors       = ['Elastic']
-  s.email         = 'info@elastic.co'
+  s.authors       = ['Elastic', 'Adam Drews']
   s.require_paths = ['lib', 'vendor/jar-dependencies']
 
   # Files

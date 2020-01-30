@@ -1,5 +1,5 @@
 # encoding: utf-8
-require "logstash-input-azure_event_hubs"
+require "logstash-input-azureiothub"
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "stud/interval"
@@ -20,14 +20,14 @@ java_import java.util.concurrent.TimeUnit
 
 
 class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
-  config_name "azure_event_hubs"
+  config_name "azureiothub"
 
   # This plugin supports two styles of configuration
   # basic - You supply a list of Event Hub connection strings complete with the 'EntityPath' that defines the Event Hub name. All other configuration is shared.
   # advanced - You supply a list of Event Hub names, and under each name provide that Event Hub's configuration. Most all of the configuration options are identical as the basic model, except they are configured per Event Hub.
   # Defaults to basic
   # Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"  , "Endpoint=sb://example2...;EntityPath=event_hub_name2"  ]
   # }
@@ -40,7 +40,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # Note - the 'event_hub_connection' may contain the 'EntityPath', but only if it matches the Event Hub name.
   # Note - the same Event Hub name is allowed under different configurations (and is why the config is array of Hashes)
   # Example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -59,7 +59,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # basic MODE ONLY - The Event Hubs to read from. This is a list of Event Hub connection strings that includes the 'EntityPath'.
   # All other configuration options will be shared between Event Hubs.
   # Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"  , "Endpoint=sb://example2...;EntityPath=event_hub_name2"  ]
   # }
@@ -69,13 +69,13 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # This is *stongly* encouraged to be set for production environments.
   # When this value is set, restarts will pick up from where it left off. Without this value set the initial_position is *always* used.
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    storage_connection => "DefaultEndpointsProtocol=https;AccountName=example...."
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -90,14 +90,14 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # Note - don't allow multiple Event Hubs to write to the same container with the same consumer group, else the offsets will be persisted incorrectly.
   # Note - this will default to the event hub name if not defined
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    storage_connection => "DefaultEndpointsProtocol=https;AccountName=example...."
   #    storage_container => "my_container"
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -110,20 +110,20 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   config :storage_container, :validate => :string, :required => false
 
   # Total threads used process events. Requires at minimum 2 threads. This option can not be set per Event Hub.
-  # azure_event_hubs {
+  # azureiothub {
   #    threads => 4
   # }
   config :threads, :validate => :number, :default => 4
 
   # Consumer group used to read the Event Hub(s). It is recommended to change from the $Default to a consumer group specifically for Logstash, and ensure that all instances of Logstash use that consumer group.
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    consumer_group => "logstash"
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -137,13 +137,13 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # The max size of events are processed together. A checkpoint is created after each batch. Increasing this value may help with performance, but requires more memory.
   # Defaults to 50
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    max_batch_size => 125
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -157,13 +157,13 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # The max size of events that are retrieved prior to processing. Increasing this value may help with performance, but requires more memory.
   # Defaults to 300
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    prefetch_count => 300
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -178,13 +178,13 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # The max time allowed receive events without a timeout.
   # Value is expressed in seconds, default 60
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    receive_timeout => 60
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -202,13 +202,13 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # look_back - reads end minus N seconds worth of pre-existing events
   # Note - If the storage_connection is set, this configuration is only applicable for the very first time Logstash reads from the event hub.
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    initial_position => "beginning"
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -224,14 +224,14 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # Note - this options is only used when initial_position => "look_back"
   # Value is expressed in seconds, default is 1 day
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    initial_position => "look_back"
   #    initial_position_look_back => 86400
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -247,13 +247,13 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # Note - checkpoints happen after every batch, so this configuration is only applicable while processing a single batch.
   # Value is expressed in seconds, set to zero to disable
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    checkpoint_interval => 5
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -265,22 +265,22 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   config :checkpoint_interval, :validate => :number, :default => 5
 
   # Adds meta data to the event.
-  # [@metadata][azure_event_hubs][name] - the name of hte event host
-  # [@metadata][azure_event_hubs][consumer_group] - the consumer group that consumed this event
-  # [@metadata][azure_event_hubs][processor_host] - the unique identifier that identifies which host processed this event. Note - there can be multiple processor hosts on a single instance of Logstash.
-  # [@metadata][azure_event_hubs][partition] - the partition from which event came from
-  # [@metadata][azure_event_hubs][offset] - the event hub offset for this event
-  # [@metadata][azure_event_hubs][sequence] - the event hub sequence for this event
-  # [@metadata][azure_event_hubs][timestamp] - the enqueued time of the event
-  # [@metadata][azure_event_hubs][event_size] - the size of the event
+  # [@metadata][azureiothub][name] - the name of hte event host
+  # [@metadata][azureiothub][consumer_group] - the consumer group that consumed this event
+  # [@metadata][azureiothub][processor_host] - the unique identifier that identifies which host processed this event. Note - there can be multiple processor hosts on a single instance of Logstash.
+  # [@metadata][azureiothub][partition] - the partition from which event came from
+  # [@metadata][azureiothub][offset] - the event hub offset for this event
+  # [@metadata][azureiothub][sequence] - the event hub sequence for this event
+  # [@metadata][azureiothub][timestamp] - the enqueued time of the event
+  # [@metadata][azureiothub][event_size] - the size of the event
   # basic Example:
-  # azure_event_hubs {
+  # azureiothub {
   #    config_mode => "basic"
   #    event_hub_connections => ["Endpoint=sb://example1...;EntityPath=event_hub_name1"]
   #    decorate_events => true
   # }
   # advanced example:
-  # azure_event_hubs {
+  # azureiothub {
   #   config_mode => "advanced"
   #   event_hubs => [
   #       { "event_hub_name1" => {
@@ -375,7 +375,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
 
   def run(queue)
     event_hub_threads = []
-    named_thread_factory = LogStash::Inputs::Azure::NamedThreadFactory.new("azure_event_hubs-worker", @id)
+    named_thread_factory = LogStash::Inputs::Azure::NamedThreadFactory.new("azureiothub-worker", @id)
     scheduled_executor_service = Executors.newScheduledThreadPool(@threads, named_thread_factory)
     @event_hubs_exploded.each do |event_hub|
       event_hub_threads << Thread.new do
