@@ -409,6 +409,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
             checkpoint_manager.java_send :initialize, [HostContext], event_processor_host.getHostContext
           end
           options = EventProcessorOptions.new
+          options.setMaxBatchSize(max_batch_size)
           options.setExceptionNotification(LogStash::Inputs::Azure::ErrorNotificationHandler.new)
           case @initial_position
           when 'beginning'

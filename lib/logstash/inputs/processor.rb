@@ -26,7 +26,7 @@ module LogStash
         end
 
         def onEvents(context, batch)
-          @logger.debug("Event Hub: #{context.getEventHubPath.to_s}, Partition: #{context.getPartitionId.to_s} is processing a batch.") if @logger.debug?
+          @logger.debug("Event Hub: #{context.getEventHubPath.to_s}, Partition: #{context.getPartitionId.to_s} is processing a batch of size #{batch.size}.") if @logger.debug?
           last_payload = nil
           batch_size = 0
           batch.each do |payload|
