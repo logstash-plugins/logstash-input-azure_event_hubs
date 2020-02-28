@@ -1,3 +1,6 @@
+## 1.1.3
+ - [DOC} Added clarification for threads parameter [#50](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/50)
+
 ## 1.1.2
  - Added workaround to fix errors when using this plugin with Java 11[#38](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/38)
 
