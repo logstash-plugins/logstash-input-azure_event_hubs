@@ -1,5 +1,5 @@
 ## 1.1.4
- - Fixed broken `max_batch_size`configuration setting [#52](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/52)
+ - Fixed missing configuration of the `max_batch_size`setting [#52](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/52)
 
 ## 1.1.3
  - [DOC] Added clarification for threads parameter [#50](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/50)
