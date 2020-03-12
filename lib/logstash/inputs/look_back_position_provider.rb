@@ -1,14 +1,15 @@
 # encoding: utf-8
 require "logstash/util/loggable"
-java_import java.util.function.Function
-java_import com.microsoft.azure.eventhubs.EventPosition
-java_import java.time.Instant
 
 module LogStash
   module Inputs
     module Azure
       class LookBackPositionProvider
-        include Function
+
+        java_import com.microsoft.azure.eventhubs.EventPosition
+        java_import java.time.Instant
+
+        include java.util.function.Function
         include LogStash::Util::Loggable
 
         def initialize(look_back_seconds)

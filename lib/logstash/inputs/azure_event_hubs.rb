@@ -8,18 +8,17 @@ require "logstash/inputs/error_notification_handler"
 require "logstash/inputs/named_thread_factory"
 require "logstash/inputs/look_back_position_provider"
 
-
-java_import com.microsoft.azure.eventprocessorhost.EventProcessorHost
-java_import com.microsoft.azure.eventprocessorhost.EventProcessorOptions
-java_import com.microsoft.azure.eventprocessorhost.InMemoryCheckpointManager
-java_import com.microsoft.azure.eventprocessorhost.InMemoryLeaseManager
-java_import com.microsoft.azure.eventprocessorhost.HostContext
-java_import com.microsoft.azure.eventhubs.ConnectionStringBuilder
-java_import java.util.concurrent.Executors
-java_import java.util.concurrent.TimeUnit
-
-
 class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
+
+  java_import com.microsoft.azure.eventprocessorhost.EventProcessorHost
+  java_import com.microsoft.azure.eventprocessorhost.EventProcessorOptions
+  java_import com.microsoft.azure.eventprocessorhost.InMemoryCheckpointManager
+  java_import com.microsoft.azure.eventprocessorhost.InMemoryLeaseManager
+  java_import com.microsoft.azure.eventprocessorhost.HostContext
+  java_import com.microsoft.azure.eventhubs.ConnectionStringBuilder
+  java_import java.util.concurrent.Executors
+  java_import java.util.concurrent.TimeUnit
+
   config_name "azure_event_hubs"
 
   # This plugin supports two styles of configuration
@@ -476,5 +475,3 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
     end
   end
 end
-
-
