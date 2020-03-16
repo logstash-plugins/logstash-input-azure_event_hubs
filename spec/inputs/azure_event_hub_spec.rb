@@ -2,16 +2,9 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/azure_event_hubs"
 
-
 java_import com.microsoft.azure.eventprocessorhost.EventProcessorHost
-java_import com.microsoft.azure.eventprocessorhost.EventProcessorOptions
 java_import com.microsoft.azure.eventprocessorhost.InMemoryCheckpointManager
 java_import com.microsoft.azure.eventprocessorhost.InMemoryLeaseManager
-java_import java.util.concurrent.ScheduledThreadPoolExecutor
-java_import java.util.concurrent.CompletableFuture
-java_import java.util.concurrent.TimeUnit
-java_import java.util.concurrent.atomic.AtomicInteger
-
 
 describe LogStash::Inputs::AzureEventHubs do
 
@@ -67,7 +60,7 @@ describe LogStash::Inputs::AzureEventHubs do
         mock_queue = double("queue")
         mock_host = double("event_processor_host")
         mock_host_context = double("host_context")
-        completable_future = CompletableFuture.new
+        completable_future = java.util.concurrent.CompletableFuture.new
         #simulate work being done before completing the future
         Thread.new do
           sleep 2
@@ -75,10 +68,10 @@ describe LogStash::Inputs::AzureEventHubs do
         end
 
         # rspec has issues with counters and concurrent code, so use threadsafe counters instead
-        host_counter = AtomicInteger.new
-        register_counter = AtomicInteger.new
-        unregister_counter = AtomicInteger.new
-        assertion_count = AtomicInteger.new
+        host_counter = java.util.concurrent.atomic.AtomicInteger.new
+        register_counter = java.util.concurrent.atomic.AtomicInteger.new
+        unregister_counter = java.util.concurrent.atomic.AtomicInteger.new
+        assertion_count = java.util.concurrent.atomic.AtomicInteger.new
 
         allow(mock_host).to receive(:getHostContext) {mock_host_context}
         allow(mock_host_context).to receive(:getEventHubPath) {"foo"}
@@ -202,7 +195,7 @@ describe LogStash::Inputs::AzureEventHubs do
         mock_queue = double("queue")
         mock_host = double("event_processor_host")
         mock_host_context = double("host_context")
-        completable_future = CompletableFuture.new
+        completable_future = java.util.concurrent.CompletableFuture.new
         #simulate work being done before completing the future
         Thread.new do
           sleep 2
@@ -210,10 +203,10 @@ describe LogStash::Inputs::AzureEventHubs do
         end
 
         # rspec has issues with counters and concurrent code, so use threadsafe counters instead
-        host_counter = AtomicInteger.new
-        register_counter = AtomicInteger.new
-        unregister_counter = AtomicInteger.new
-        assertion_count = AtomicInteger.new
+        host_counter = java.util.concurrent.atomic.AtomicInteger.new
+        register_counter = java.util.concurrent.atomic.AtomicInteger.new
+        unregister_counter = java.util.concurrent.atomic.AtomicInteger.new
+        assertion_count = java.util.concurrent.atomic.AtomicInteger.new
         allow_any_instance_of(InMemoryLeaseManager).to receive(:java_send)
         allow_any_instance_of(InMemoryCheckpointManager).to receive(:java_send)
 
@@ -319,4 +312,3 @@ describe LogStash::Inputs::AzureEventHubs do
     end
   end
 end
-

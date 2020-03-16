@@ -1,3 +1,6 @@
+## 1.2.2
+ - Refactor: scope and review global java_imports [#57](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/57)
+
 ## 1.2.1
  - [DOC] Changed documentation to update the default number of threads [#55](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/55)
 
@@ -34,6 +37,6 @@
 ## 1.0.1
  - Fixed logging for exception handler
 
-## 1.0.0 
+## 1.0.0
  - Initial release of `logstash-input-azure_event_hubs` supersedes `logstash-input-azureeventhub`
  - Re-implementation that uses Event Processor Host API and new configuration options.

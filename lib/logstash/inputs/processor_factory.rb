@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "logstash/inputs/processor"
+
 module LogStash
   module Inputs
     module Azure
@@ -22,6 +23,3 @@ module LogStash
     end
   end
 end
-
-
-
