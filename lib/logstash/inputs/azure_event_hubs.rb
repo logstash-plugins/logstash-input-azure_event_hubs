@@ -110,9 +110,9 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
 
   # Total threads used process events. Requires at minimum 2 threads. This option can not be set per Event Hub.
   # azure_event_hubs {
-  #    threads => 4
+  #    threads => 16
   # }
-  config :threads, :validate => :number, :default => 4
+  config :threads, :validate => :number, :default => 16
 
   # Consumer group used to read the Event Hub(s). It is recommended to change from the $Default to a consumer group specifically for Logstash, and ensure that all instances of Logstash use that consumer group.
   # basic Example:

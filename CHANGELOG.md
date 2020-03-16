@@ -1,3 +1,9 @@
+## 1.2.1
+ - [DOC] Changed documentation to update the default number of threads [#55](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/55)
+
+## 1.2.0
+ - Changed the default number of threads from `4` to `16` to match the default number from the Azure-Sdk EventProcessorHost [#54](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/54)
+
 ## 1.1.4
  - Fixed missing configuration of the `max_batch_size`setting [#52](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/52)
 
