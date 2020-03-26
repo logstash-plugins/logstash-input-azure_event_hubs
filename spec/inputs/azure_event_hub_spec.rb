@@ -21,7 +21,7 @@ describe LogStash::Inputs::AzureEventHubs do
           expect(exploded_config[i]['event_hub_connections'][0].value).to start_with('Endpoint=sb://...')
           expect(exploded_config[i]['storage_connection'].value).to eql('DefaultEndpointsProtocol=https;AccountName=...')
           expect(exploded_config[i]['threads']).to be == 9
-          expect(exploded_config[i]['codec']).to be_a_kind_of(LogStash::Codecs::Plain)
+          expect(exploded_config[i]['codec'].class.to_s).to eq("LogStash::Codecs::Plain")
           expect(exploded_config[i]['consumer_group']).to eql('cg')
           expect(exploded_config[i]['max_batch_size']).to be == 20
           expect(exploded_config[i]['prefetch_count']).to be == 30
@@ -179,7 +179,7 @@ describe LogStash::Inputs::AzureEventHubs do
         expect(exploded_config[1]['event_hub_connections'][0].value).to eql('1Endpoint=sb://...')
         expect(exploded_config[1]['storage_connection'].value).to eql('1DefaultEndpointsProtocol=https;AccountName=...')
         expect(exploded_config[1]['threads']).to be == 9
-        expect(exploded_config[1]['codec']).to be_a_kind_of(LogStash::Codecs::JSON) # different between configs
+        expect(exploded_config[1]['codec'].class.to_s).to eq("LogStash::Codecs::JSON") # different between configs
         expect(exploded_config[1]['consumer_group']).to eql('cg1') # override global
         expect(exploded_config[1]['max_batch_size']).to be == 21 # filled from global
         expect(exploded_config[1]['prefetch_count']).to be == 300 # default
