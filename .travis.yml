@@ -1,18 +1,2 @@
----
-sudo: required
-services: docker
-addons:
-  apt:
-    packages:
-    - docker-ce
-language: ruby
-matrix:
-  include:
-  - env: ELASTIC_STACK_VERSION=5.6.16
-  - env: ELASTIC_STACK_VERSION=6.7.2
-  - env: ELASTIC_STACK_VERSION=7.0.1
-  fast_finish: true
-install: true
-script: ci/unit/docker-test.sh
-
-before_install: gem install bundler -v '< 2'
+import:
+- logstash-plugins/.ci:travis/travis.yml@1.x
