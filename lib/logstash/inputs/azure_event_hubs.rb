@@ -18,6 +18,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   java_import com.microsoft.azure.eventhubs.ConnectionStringBuilder
   java_import java.util.concurrent.Executors
   java_import java.util.concurrent.TimeUnit
+  java_import java.time.Duration
 
   config_name "azure_event_hubs"
 
@@ -290,7 +291,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # }
   config :decorate_events, :validate => :boolean, :default => false
 
-  attr_reader :count, :pre_count
+  attr_reader :count
 
   def initialize(params)
 
@@ -409,6 +410,9 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
           end
           options = EventProcessorOptions.new
           options.setMaxBatchSize(max_batch_size)
+          options.setPrefetchCount(prefetch_count)
+          options.setReceiveTimeOut(Duration.ofSeconds(receive_timeout))
+          
           options.setExceptionNotification(LogStash::Inputs::Azure::ErrorNotificationHandler.new)
           case @initial_position
           when 'beginning'
