@@ -1,3 +1,6 @@
+## 1.3.0
+ - Add EventHub `user properties` in `@metadata` object [#66](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/66)
+
 ## 1.2.3
  - Fixed missing configuration of `prefetch_count` and `receive_timeout` [#61](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/61)
 

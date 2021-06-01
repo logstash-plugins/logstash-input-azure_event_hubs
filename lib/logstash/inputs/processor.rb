@@ -48,6 +48,7 @@ module LogStash
                 event.set("[@metadata][azure_event_hubs][sequence]", payload.getSystemProperties.getSequenceNumber)
                 event.set("[@metadata][azure_event_hubs][timestamp]",payload.getSystemProperties.getEnqueuedTime.getEpochSecond)
                 event.set("[@metadata][azure_event_hubs][event_size]", bytes.size)
+                event.set("[@metadata][azure_event_hubs][user_properties]", payload.getProperties)
               end
               @queue << event
               if @checkpoint_interval > 0
