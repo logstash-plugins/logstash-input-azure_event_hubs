@@ -1,3 +1,6 @@
+## 1.4.0
+ - Updated the minor version of Azure SDK and other dependencies to ensure users of this plugin get upstream fixes and improvements [#67](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/67)
+
 ## 1.3.0
  - Add EventHub `user properties` in `@metadata` object [#66](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/66)
 
