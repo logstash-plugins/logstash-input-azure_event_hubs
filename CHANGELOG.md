@@ -1,4 +1,4 @@
-## 1.4.1
+## Unreleased
  - Fixed Gradle's script to use Gradle 7 [#69](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/69)
 
 ## 1.4.0
