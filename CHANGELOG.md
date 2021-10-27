@@ -1,3 +1,6 @@
+## Unreleased
+ - Fixed Gradle's script to use Gradle 7 [#69](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/69)
+
 ## 1.4.0
  - Updated the minor version of Azure SDK and other dependencies to ensure users of this plugin get upstream fixes and improvements [#67](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/67)
 
