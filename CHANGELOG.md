@@ -1,4 +1,5 @@
-## Unreleased
+## 1.4.1
+ - Update log4j dependencies [#71](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/71)
  - Fixed Gradle's script to use Gradle 7 [#69](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/69)
 
 ## 1.4.0
