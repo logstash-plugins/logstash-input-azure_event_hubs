@@ -1,5 +1,5 @@
 ## 1.4.2
- - Update log4j dependencies to 2.16.0
+ - Update log4j dependencies to 2.17.0
 
 ## 1.4.1
  - Update log4j dependencies [#71](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/71)
