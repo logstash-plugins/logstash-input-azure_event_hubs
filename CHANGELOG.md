@@ -1,3 +1,6 @@
+## 1.4.3
+ - Build: make log4j-api a provided dependency [#73](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/73)
+
 ## 1.4.2
  - Update log4j dependencies to 2.17.0
 
