@@ -432,25 +432,25 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
             options.setInitialPositionProvider(LogStash::Inputs::Azure::LookBackPositionProvider.new(@initial_position_look_back))
           end
           event_processor_host.registerEventProcessorFactory(LogStash::Inputs::Azure::ProcessorFactory.new(queue, event_hub['codec'], event_hub['checkpoint_interval'], self.method(:decorate), event_hub['decorate_events']), options)
-              .whenComplete {|x, e|
+              .when_complete(lambda {|x, e|
                 @logger.info("Event Hub registration complete. ", :event_hub_name => event_hub_name )
                 @logger.error("Event Hub failure while registering.", :event_hub_name => event_hub_name, :exception => e, :backtrace => e.backtrace) if e
-              }
-              .then_accept {|x|
+              })
+              .then_accept(lambda {|x|
                 @logger.info("Event Hub is processing events... ", :event_hub_name => event_hub_name )
                 # this blocks the completable future chain from progressing, actual work is done via the executor service
                 while !stop?
                   Stud.stoppable_sleep(1) {stop?}
                 end
-              }
-              .thenCompose {|x|
+              })
+              .then_compose(lambda {|x|
                 @logger.info("Unregistering Event Hub this can take a while... ", :event_hub_name => event_hub_name )
                 event_processor_host.unregisterEventProcessor
-              }
-              .exceptionally {|e|
+              })
+              .exceptionally(lambda {|e|
                 @logger.error("Event Hub encountered an error.", :event_hub_name => event_hub_name , :exception => e, :backtrace => e.backtrace) if e
                 nil
-              }
+              })
               .get # this blocks till all of the futures are complete.
           @logger.info("Event Hub #{event_hub_name} is closed.")
         rescue => e
