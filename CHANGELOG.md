@@ -1,3 +1,6 @@
+## 1.4.4
+ - Fix: Replace use of block with lambda to fix wrong number of arguments error on jruby-9.3.4.0 [#75](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/75)
+
 ## 1.4.3
  - Build: make log4j-api a provided dependency [#73](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/73)
 
