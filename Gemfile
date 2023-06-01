@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 gemspec
 
-logstash_path = "../../logstash"
+logstash_path = ENV['LOGSTASH_PATH'] || '../../logstash'
 
 if Dir.exist?(logstash_path) && ENV["LOGSTASH_SOURCE"] == "1"
   gem 'logstash-core', :path => "#{logstash_path}/logstash-core"
