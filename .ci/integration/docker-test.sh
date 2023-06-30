@@ -27,12 +27,12 @@ if [ "$ELASTIC_STACK_VERSION" ]; then
 
     # Build the gem
     find . -name *.gemspec | xargs gem build
-    cp *.gem ci/integration/this.gem
-    source ci/integration/env.sh
+    cp *.gem .ci/integration/this.gem
+    source .ci/integration/env.sh
 
     export LS_ARGS="-f $@"
-    docker-compose -f ci/integration/docker-compose.yml down
-    docker-compose -f ci/integration/docker-compose.yml up --build --exit-code-from logstash1 --force-recreate
+    docker-compose -f .ci/integration/docker-compose.yml down
+    docker-compose -f .ci/integration/docker-compose.yml up --build --exit-code-from logstash1 --force-recreate
     # Need to manually stop
 else
     echo "Please set the ELASTIC_STACK_VERSION environment variable"

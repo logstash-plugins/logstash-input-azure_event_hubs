@@ -1,3 +1,6 @@
+## 1.4.5
+ - Upgrade multiple dependencies such as `gson`, `log4j2`, `jackson` to make the plugin stable [#83](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/83)
+
 ## 1.4.4
  - Fix: Replace use of block with lambda to fix wrong number of arguments error on jruby-9.3.4.0 [#75](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/75)
 
