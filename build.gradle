@@ -1,12 +1,16 @@
 import java.nio.file.Files
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
-apply plugin: 'java'
-apply plugin: 'idea'
+plugins {
+  id 'java'
+  id 'idea'
+}
 
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}
 
 repositories {
     mavenCentral()
