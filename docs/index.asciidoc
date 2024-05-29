@@ -31,6 +31,9 @@ Many Azure services integrate with the Azure Event Hubs.
 https://docs.microsoft.com/en-us/azure/monitoring-and-diagnostics/monitoring-overview-azure-monitor[Azure
 Monitor], for example, integrates with Azure Event Hubs to provide infrastructure metrics. 
 
+IMPORTANT: The plugin requires outbound connections to `tcp/443`, `tcp/9093`, `tcp/5671` and `tcp/5672` ([Microsoft Event Hub documentation](https://learn.microsoft.com/en-us/azure/event-hubs/event-hubs-faq#what-ports-do-i-need-to-open-on-the-firewall)).
+
+
 ===== Event Hub connection string
 
 The plugin uses the connection string to access Azure Events Hubs. Find the
