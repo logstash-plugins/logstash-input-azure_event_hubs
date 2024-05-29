@@ -1,3 +1,6 @@
+## 1.4.6
+  - [DOCS] Add outbound port requirements for Event Hub [#88](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/88)
+
 ## 1.4.5
  - Upgrade multiple dependencies such as `gson`, `log4j2`, `jackson` to make the plugin stable [#83](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/83)
 
