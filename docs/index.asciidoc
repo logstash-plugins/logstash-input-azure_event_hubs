@@ -124,12 +124,19 @@ NOTE: Threads are currently available only as a global setting across all event 
 input definition. However if your configuration includes multiple `azure_event_hubs` inputs, the threads setting applies
 independently to each.
 
-**Sample scenarios** 
+**Example: Single Event Hub**
 
-* Event Hubs = 4. Partitions on each Event Hub = 3.
-Minimum threads is 5 (4 Event Hubs plus one).
-* If you’re collecting activity logs from one event hub instance, 
-then only 2 threads (1 Event Hub plus one) are required.
+If you’re collecting activity logs from one event hub instance, 
+then only 2 threads are required.
+
+* Event Hubs = 1
+* Threads = 2 (1 Event Hub + 1)
+
+**Example: Multiple Event Hubs**
+
+* Event Hubs = 4 
+* Partitions on each Event Hub = 3
+* Minimum threads = 5 (4 Event Hubs + 1) 
 
 
 [id="plugins-{type}s-{plugin}-eh_config_models"]
