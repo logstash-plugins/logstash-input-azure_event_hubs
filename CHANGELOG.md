@@ -1,3 +1,6 @@
+## 1.4.7
+  - [DOCS] Clarify examples for single and multiple event hubs [#90](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/90)
+
 ## 1.4.6
   - [DOCS] Add outbound port requirements for Event Hub [#88](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/88)
 
