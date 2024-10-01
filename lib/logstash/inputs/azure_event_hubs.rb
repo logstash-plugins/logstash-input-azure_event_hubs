@@ -367,7 +367,8 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
       if self.class.method(:replace_placeholders).arity == 1
         connection = self.class.replace_placeholders(connection)
       else
-        # Logstash >= 8.15.1 changed the method arity including a new boolean parameter `refine`.
+        # Logstash 8.15.1 and 8.15.2 changed the method arity including a new boolean parameter `refine`.
+        # This was fixed in 8.15.3. see https://github.com/elastic/logstash/pull/16485
         connection = self.class.replace_placeholders(connection, false)
       end
     end
