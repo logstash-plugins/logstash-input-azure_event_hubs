@@ -332,8 +332,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
         connections = *params['event_hub_connections'] # ensure array
         connections.each.with_index do |_connection, i|
           begin
-            connection = self.class.replace_placeholders(_connection) if self.class.respond_to? 'replace_placeholders' # 6.x
-            connection = self.class.replace_env_placeholders(_connection) if self.class.respond_to? 'replace_env_placeholders' # 5.x
+            connection = replace_connection_placeholders(_connection)
             event_hub_name = ConnectionStringBuilder.new(connection).getEventHubName
             redacted_connection = connection.gsub(/(SharedAccessKey=)([0-9a-zA-Z=+]*)([;]*)(.*)/, '\\1<redacted>\\3\\4')
             params['event_hub_connections'][i] = redacted_connection # protect from leaking logs
@@ -360,6 +359,24 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   end
 
   attr_reader :event_hubs_exploded
+
+  def replace_connection_placeholders(value)
+    connection = value
+    if self.class.respond_to? :replace_placeholders
+      # Logstash 6.x
+      if self.class.method(:replace_placeholders).arity == 1
+        connection = self.class.replace_placeholders(connection)
+      else
+        # Logstash >= 8.15.1 changed the method arity including a new boolean parameter `refine`.
+        connection = self.class.replace_placeholders(connection, false)
+      end
+    end
+
+    # Logstash 5.x
+    connection = self.class.replace_env_placeholders(connection) if self.class.respond_to? :replace_env_placeholders
+
+    connection
+  end
 
   def register
     # augment the exploded config with the defaults
