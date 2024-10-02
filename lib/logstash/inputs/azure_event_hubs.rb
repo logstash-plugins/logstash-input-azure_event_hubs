@@ -422,9 +422,10 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
                 lease_manager,
                 scheduled_executor_service,
                 nil)
+            host_context = get_host_context(event_processor_host)
             #using java_send to avoid naming conflicts with 'initialize' method
-            lease_manager.java_send :initialize, [HostContext], event_processor_host.getHostContext
-            checkpoint_manager.java_send :initialize, [HostContext], event_processor_host.getHostContext
+            lease_manager.java_send :initialize, [HostContext], host_context
+            checkpoint_manager.java_send :initialize, [HostContext], host_context
           end
           options = EventProcessorOptions.new
           options.setMaxBatchSize(max_batch_size)
@@ -495,5 +496,15 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
     rescue => e
       @logger.debug("interrupted while waiting to close executor service, this can generally be ignored", :exception => e, :backtrace => e.backtrace) if e
     end
+  end
+
+  private
+
+  # This method is used to get around the fact that recent versions of jruby do not
+  # allow access to the package private protected method `getHostContext`
+  def get_host_context(event_processor_host)
+    method = event_processor_host.java_class.declared_method('getHostContext')
+    method.accessible = true
+    method.invoke(event_processor_host)
   end
 end
