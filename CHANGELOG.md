@@ -1,3 +1,6 @@
+## 1.4.9
+  - Fixed issue with `getHostContext` method accessibility, causing plugin not to be able to run  [#93](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/93)
+
 ## 1.4.8
   - Fixed connection placeholder replacements errors with Logstash `8.15.1` and `8.15.2` [#92](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/92)
 

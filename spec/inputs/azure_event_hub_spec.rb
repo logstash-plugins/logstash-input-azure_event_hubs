@@ -207,10 +207,10 @@ describe LogStash::Inputs::AzureEventHubs do
         register_counter = java.util.concurrent.atomic.AtomicInteger.new
         unregister_counter = java.util.concurrent.atomic.AtomicInteger.new
         assertion_count = java.util.concurrent.atomic.AtomicInteger.new
+        allow(input).to receive(:get_host_context) {mock_host_context}
         allow_any_instance_of(InMemoryLeaseManager).to receive(:java_send)
         allow_any_instance_of(InMemoryCheckpointManager).to receive(:java_send)
 
-        allow(mock_host).to receive(:getHostContext) {mock_host_context}
         allow(mock_host_context).to receive(:getEventHubPath) {"foo"}
 
         expect(mock_host).to receive(:registerEventProcessorFactory).at_most(3).times {
@@ -256,6 +256,11 @@ describe LogStash::Inputs::AzureEventHubs do
         expect(assertion_count.get).to be == 3
       end
 
+      it "can create an in memory EPH" do
+        #event_hub, event_hub_name, scheduled_executor_service
+        exploded_config = input.event_hubs_exploded
+        input.create_in_memory_event_processor_host(exploded_config[0], exploded_config[0]['event_hubs'].first, nil)
+      end
     end
 
     describe "Bad Basic Config" do

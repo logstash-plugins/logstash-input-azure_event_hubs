@@ -411,20 +411,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
                 scheduled_executor_service)
           else
             @logger.warn("You have NOT specified a `storage_connection_string` for #{event_hub_name}. This configuration is only supported for a single Logstash instance.")
-            checkpoint_manager = InMemoryCheckpointManager.new
-            lease_manager = InMemoryLeaseManager.new
-            event_processor_host = EventProcessorHost.new(
-                EventProcessorHost.createHostName('logstash'),
-                event_hub_name,
-                event_hub['consumer_group'],
-                event_hub['event_hub_connections'].first.value, #there will only be one in this array by the time it gets here
-                checkpoint_manager,
-                lease_manager,
-                scheduled_executor_service,
-                nil)
-            #using java_send to avoid naming conflicts with 'initialize' method
-            lease_manager.java_send :initialize, [HostContext], event_processor_host.getHostContext
-            checkpoint_manager.java_send :initialize, [HostContext], event_processor_host.getHostContext
+            event_processor_host = create_in_memory_event_processor_host(event_hub, event_hub_name, scheduled_executor_service)
           end
           options = EventProcessorOptions.new
           options.setMaxBatchSize(max_batch_size)
@@ -496,4 +483,38 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
       @logger.debug("interrupted while waiting to close executor service, this can generally be ignored", :exception => e, :backtrace => e.backtrace) if e
     end
   end
+
+  def create_in_memory_event_processor_host(event_hub, event_hub_name, scheduled_executor_service)
+    checkpoint_manager = InMemoryCheckpointManager.new
+    lease_manager = InMemoryLeaseManager.new
+    event_processor_host = EventProcessorHost.new(
+      EventProcessorHost.createHostName('logstash'),
+      event_hub_name,
+      event_hub['consumer_group'],
+      event_hub['event_hub_connections'].first.value, #there will only be one in this array by the time it gets here
+      checkpoint_manager,
+      lease_manager,
+      scheduled_executor_service,
+      nil)
+    host_context = get_host_context(event_processor_host)
+    #using java_send to avoid naming conflicts with 'initialize' method
+    lease_manager.java_send :initialize, [HostContext], host_context
+    checkpoint_manager.java_send :initialize, [HostContext], host_context
+    event_processor_host
+  end
+
+  private
+
+  # This method is used to get around the fact that recent versions of jruby do not
+  # allow access to the package private protected method `getHostContext`
+  def get_host_context(event_processor_host)
+    call_private(event_processor_host, 'getHostContext')
+  end
+
+  def call_private(clazz, method)
+    method = clazz.java_class.declared_method(method)
+    method.accessible = true
+    method.invoke(clazz)
+  end
+
 end
