@@ -256,6 +256,11 @@ describe LogStash::Inputs::AzureEventHubs do
         expect(assertion_count.get).to be == 3
       end
 
+      it "can create an in memory EPH" do
+        #event_hub, event_hub_name, scheduled_executor_service
+        exploded_config = input.event_hubs_exploded
+        input.create_in_memory_event_processor_host(exploded_config[0], exploded_config[0]['event_hubs'].first, nil)
+      end
     end
 
     describe "Bad Basic Config" do
