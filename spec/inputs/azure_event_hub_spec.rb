@@ -207,10 +207,10 @@ describe LogStash::Inputs::AzureEventHubs do
         register_counter = java.util.concurrent.atomic.AtomicInteger.new
         unregister_counter = java.util.concurrent.atomic.AtomicInteger.new
         assertion_count = java.util.concurrent.atomic.AtomicInteger.new
+        allow(input).to receive(:get_host_context) {mock_host_context}
         allow_any_instance_of(InMemoryLeaseManager).to receive(:java_send)
         allow_any_instance_of(InMemoryCheckpointManager).to receive(:java_send)
 
-        allow(mock_host).to receive(:getHostContext) {mock_host_context}
         allow(mock_host_context).to receive(:getEventHubPath) {"foo"}
 
         expect(mock_host).to receive(:registerEventProcessorFactory).at_most(3).times {
