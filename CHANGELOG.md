@@ -1,3 +1,6 @@
+## 1.4.8
+  - Fixed connection placeholder replacements errors with Logstash `8.15.1` and `8.15.2` [#92](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/92)
+
 ## 1.4.7
   - [DOCS] Clarify examples for single and multiple event hubs [#90](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/90)
 
