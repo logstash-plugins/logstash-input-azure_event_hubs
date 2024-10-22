@@ -401,14 +401,17 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
         @logger.info("Event Hub #{event_hub_name} is initializing... ")
         begin
           if event_hub['storage_connection']
-            event_processor_host = EventProcessorHost.new(
-                EventProcessorHost.createHostName('logstash'),
-                event_hub_name,
-                event_hub['consumer_group'],
-                event_hub['event_hub_connections'].first.value, #there will only be one in this array by the time it gets here
-                event_hub['storage_connection'].value,
-                event_hub.fetch('storage_container', event_hub_name),
-                scheduled_executor_service)
+            event_processor_host = EventProcessorHost::EventProcessorHostBuilder.newBuilder(EventProcessorHost.createHostName('logstash'), event_hub['consumer_group'])
+                                                         .useAzureStorageCheckpointLeaseManager(
+                                                           event_hub['storage_connection'].value,
+                                                           event_hub.fetch('storage_container', event_hub_name),
+                                                           nil
+                                                         )
+                                                         .useEventHubConnectionString(
+                                                           event_hub['event_hub_connections'].first.value, #there will only be one in this array by the time it gets here
+                                                         )
+                                                     .setExecutor(scheduled_executor_service)
+                                                     .build
           else
             @logger.warn("You have NOT specified a `storage_connection_string` for #{event_hub_name}. This configuration is only supported for a single Logstash instance.")
             event_processor_host = create_in_memory_event_processor_host(event_hub, event_hub_name, scheduled_executor_service)
@@ -487,15 +490,11 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   def create_in_memory_event_processor_host(event_hub, event_hub_name, scheduled_executor_service)
     checkpoint_manager = InMemoryCheckpointManager.new
     lease_manager = InMemoryLeaseManager.new
-    event_processor_host = EventProcessorHost.new(
-      EventProcessorHost.createHostName('logstash'),
-      event_hub_name,
-      event_hub['consumer_group'],
-      event_hub['event_hub_connections'].first.value, #there will only be one in this array by the time it gets here
-      checkpoint_manager,
-      lease_manager,
-      scheduled_executor_service,
-      nil)
+    event_processor_host = EventProcessorHost::EventProcessorHostBuilder.newBuilder(EventProcessorHost.createHostName('logstash'), event_hub['consumer_group'])
+                                             .useUserCheckpointAndLeaseManagers(checkpoint_manager, lease_manager)
+                                             .useEventHubConnectionString(event_hub['event_hub_connections'].first.value) #there will only be one in this array by the time it gets here
+                                             .setExecutor(scheduled_executor_service)
+                                             .build
     host_context = get_host_context(event_processor_host)
     #using java_send to avoid naming conflicts with 'initialize' method
     lease_manager.java_send :initialize, [HostContext], host_context
