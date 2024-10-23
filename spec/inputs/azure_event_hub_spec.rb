@@ -84,25 +84,39 @@ describe LogStash::Inputs::AzureEventHubs do
           unregister_counter.incrementAndGet
           completable_future
         }
-        expect(EventProcessorHost).to receive(:new).at_most(2).times {|host_name, event_hub_name, consumer_group, event_hub_connection, storage_connection, container, executor|
-          case event_hub_name
-          when 'event_hub_name0'
 
-            assertion_count.incrementAndGet
+        build_step_mock = double("final build step")
+        expect(build_step_mock).to receive(:build).at_most(2).times.and_return(mock_host)
+
+        executor_step = double("executor step")
+        expect(executor_step).to receive(:setExecutor).at_most(2).times.and_return(build_step_mock)
+
+        mock_connection_string = double("connection string")
+        expect(mock_connection_string).to receive(:useEventHubConnectionString).at_most(2).times {|event_hub_connection|
+          case event_hub_connection
+          when /.*event_hub_name0$/
             expect(event_hub_connection).to eql(config['event_hub_connections'][0])
-            expect(container).to eql('event_hub_name0') # default
+          when /.*event_hub_name1$/
+            expect(event_hub_connection).to eql(config['event_hub_connections'][1])
+          end
+          executor_step
+        }
 
+        mock_builder = double("storage and lease managers")
+        expect(mock_builder).to receive(:useAzureStorageCheckpointLeaseManager).at_most(2).times {|storage_connection_str, storage_container, storage_blob_prefix|
+          case storage_container
+          when 'event_hub_name0'
+            assertion_count.incrementAndGet
           when 'event_hub_name1'
             assertion_count.incrementAndGet
-            expect(host_name).to start_with('logstash')
-            expect(event_hub_connection).to eql(config['event_hub_connections'][1])
-            expect(container).to eql('event_hub_name1') # default
           end
-          expect(host_name).to start_with('logstash')
-          expect(storage_connection).to eql(config['storage_connection'])
+          mock_connection_string
+        }
 
+        expect(EventProcessorHost::EventProcessorHostBuilder).to receive(:newBuilder).at_most(2).times {|host_name, consumer_group|
+          expect(host_name).to start_with('logstash')
           host_counter.incrementAndGet
-          mock_host
+          mock_builder
         }
         # signal the stop first since the run method blocks until stop is called.
         input.do_stop
@@ -126,8 +140,6 @@ describe LogStash::Inputs::AzureEventHubs do
           expect(exploded_config[0]['event_hub_connections'][0].value).to eql('Endpoint=sb://logstash/;SharedAccessKeyName=activity-log-readonly;SharedAccessKey=something;EntityPath=event_hub1')
         end
       end
-
-
     end
 
     describe "Advanced Config" do
@@ -221,32 +233,45 @@ describe LogStash::Inputs::AzureEventHubs do
           unregister_counter.incrementAndGet
           completable_future
         }
-        expect(EventProcessorHost).to receive(:new).at_most(3).times {|host_name, event_hub_name, consumer_group, event_hub_connection, storage_connection, container, executor|
-          case event_hub_name
-          when 'event_hub_name0'
-            if consumer_group.eql?('cg')
-              assertion_count.incrementAndGet
-              expect(host_name).to start_with('logstash')
-              expect(event_hub_connection).to eql(config['event_hubs'][0]['event_hub_name0']['event_hub_connections'][0].value)
-              expect(storage_connection).to eql(config['event_hubs'][0]['event_hub_name0']['storage_connection'].value)
-              expect(container).to eql('event_hub_name0') # default
-            elsif consumer_group.eql?('ls')
-              assertion_count.incrementAndGet
-              expect(event_hub_connection).to eql(config['event_hubs'][2]['event_hub_name0']['event_hub_connections'][0].value)
-              # in this mode, storage connection and container are replaced with in memory offset management
-              expect(storage_connection).to be_kind_of(InMemoryCheckpointManager)
-              expect(container).to be_kind_of(InMemoryLeaseManager)
-            end
-          when 'event_hub_name1'
-            assertion_count.incrementAndGet
-            expect(host_name).to start_with('logstash')
+
+        build_step_mock = double("final build step")
+        expect(build_step_mock).to receive(:build).at_most(3).times.and_return(mock_host)
+
+        executor_step = double("executor step")
+        expect(executor_step).to receive(:setExecutor).at_most(3).times.and_return(build_step_mock)
+
+        mock_connection_string = double("connection string")
+        expect(mock_connection_string).to receive(:useEventHubConnectionString).at_most(3).times {|event_hub_connection|
+          case event_hub_connection
+          when /.*event_hub_name0$/
+            expect(event_hub_connection).to eql(config['event_hubs'][0]['event_hub_name0']['event_hub_connections'][0].value)
+          when /.*event_hub_name1$/
             expect(event_hub_connection).to eql(config['event_hubs'][1]['event_hub_name1']['event_hub_connections'][0].value)
-            expect(storage_connection).to eql(config['event_hubs'][1]['event_hub_name1']['storage_connection'].value)
-            expect(container).to eql(config['event_hubs'][1]['event_hub_name1']['storage_container'])
           end
-          host_counter.incrementAndGet
-          mock_host
+          executor_step
         }
+
+        managers_mock = double("checkpoint and lease managers")
+        expect(managers_mock).to receive(:useUserCheckpointAndLeaseManagers).at_most(3).times {|checkpoint_mngr, lease_mngr|
+          assertion_count.incrementAndGet
+          mock_connection_string
+        }
+        expect(managers_mock).to receive(:useAzureStorageCheckpointLeaseManager).at_most(3).times {|storage_connection_str, storage_container, storage_blob_prefix|
+          case storage_container
+          when 'event_hub_name0'
+            assertion_count.incrementAndGet
+          when 'alt_container'
+            assertion_count.incrementAndGet
+          end
+          mock_connection_string
+        }
+
+        expect(EventProcessorHost::EventProcessorHostBuilder).to receive(:newBuilder).at_most(3).times {|host_name, consumer_group|
+          expect(host_name).to start_with('logstash')
+          host_counter.incrementAndGet
+          managers_mock
+        }
+
         # signal the stop first since the run method blocks until stop is called.
         input.do_stop
         input.run(mock_queue)
@@ -259,12 +284,14 @@ describe LogStash::Inputs::AzureEventHubs do
       it "can create an in memory EPH" do
         #event_hub, event_hub_name, scheduled_executor_service
         exploded_config = input.event_hubs_exploded
+        # During build step Azure libraries does a syntax check of EventHub connection string, so needs to be a pseudo real
+        exploded_config[0]['event_hub_connections'] = [::LogStash::Util::Password.new("Endpoint=sb://logstash.windows.net/;SharedAccessKeyName=activity-log-read-only;SharedAccessKey=blabla;EntityPath=ops-logs")]
         input.create_in_memory_event_processor_host(exploded_config[0], exploded_config[0]['event_hubs'].first, nil)
       end
     end
 
     describe "Bad Basic Config" do
-      describe "Offset overwritting" do
+      describe "Offset overwriting" do
         let(:config) do
           {
               'event_hub_connections' => ['Endpoint=sb://...;EntityPath=event_hub_name0', 'Endpoint=sb://...;EntityPath=event_hub_name0'],
