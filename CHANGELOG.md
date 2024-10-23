@@ -1,3 +1,6 @@
+## 1.5.0
+  - Updated Azure Event Hub client library to version 3.3.0 [#96](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/96)
+
 ## 1.4.9
   - Fixed issue with `getHostContext` method accessibility, causing plugin not to be able to run  [#93](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/93)
 
