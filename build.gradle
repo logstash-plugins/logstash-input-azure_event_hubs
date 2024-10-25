@@ -19,12 +19,43 @@ repositories {
 dependencies {
     testImplementation 'junit:junit:4.12'
 
-    implementation 'com.microsoft.azure:azure-eventhubs:2.3.2'
+    implementation 'com.microsoft.azure:azure-eventhubs:3.3.0'
+
     implementation 'com.microsoft.azure:qpid-proton-j-extensions:1.2.4'
-    implementation 'com.microsoft.azure:azure-eventhubs-eph:2.5.2'
+    implementation 'com.microsoft.azure:azure-eventhubs-eph:3.3.0'
     implementation 'com.microsoft.azure:azure-storage:8.6.6'
-    implementation 'com.google.code.gson:gson:2.10.1'
-    implementation 'org.apache.qpid:proton-j:0.33.9'
+    implementation 'com.google.code.gson:gson:2.8.9'
+    implementation 'org.apache.qpid:proton-j:0.33.8'
+
+    implementation 'com.microsoft.azure:azure-keyvault-core:1.2.4'
+    implementation 'com.microsoft.azure:adal4j:1.6.4'
+    implementation 'com.microsoft.azure:azure-annotations:1.10.0'
+    implementation 'com.microsoft.azure:azure-client-authentication:1.7.3'
+    implementation 'com.microsoft.azure:azure-client-runtime:1.7.3'
+    implementation 'com.microsoft.rest:client-runtime:1.7.3'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.12.7'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.12.7'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.12.7.1'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-joda:2.12.7'
+    implementation 'com.github.stephenc.jcip:jcip-annotations:1.0-1'
+    implementation 'com.google.guava:guava:32.0.1-jre'
+    implementation 'com.nimbusds:lang-tag:1.7'
+    implementation 'com.nimbusds:nimbus-jose-jwt:9.37.2'
+    implementation 'com.nimbusds:oauth2-oidc-sdk:6.5'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.2'
+    implementation 'com.squareup.okhttp3:okhttp-urlconnection:3.12.2'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.7'
+    implementation 'com.squareup.okio:okio:1.17.6'
+    implementation 'com.squareup.retrofit2:adapter-rxjava:2.7.2'
+    implementation 'com.squareup.retrofit2:converter-jackson:2.7.2'
+    implementation 'com.squareup.retrofit2:retrofit:2.7.2'
+    implementation 'com.sun.mail:javax.mail:1.6.1'
+    implementation 'commons-codec:commons-codec:1.11'
+    implementation 'io.reactivex:rxjava:1.3.8'
+    implementation 'javax.activation:activation:1.1'
+    implementation 'net.minidev:json-smart:2.4.9'
+    implementation 'org.checkerframework:checker-compat-qual:2.0.0'
+    implementation 'org.codehaus.mojo:animal-sniffer-annotations:1.14'
     compileOnly 'org.apache.logging.log4j:log4j-api:2.17.0' // provided by Logstash
     testImplementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.0' // provided by Logstash
 }
@@ -47,11 +78,16 @@ task vendor {
     doLast {
         String vendorPathPrefix = "vendor/jar-dependencies"
         configurations.runtimeClasspath.allDependencies.each { dep ->
-            File f = configurations.runtimeClasspath.filter { it.absolutePath.contains("${dep.group}" + File.separator + "${dep.name}" + File.separator + "${dep.version}") }.singleFile
-            String groupPath = dep.group.replaceAll('\\.', '/')
-            File newJarFile = file("${vendorPathPrefix}" + File.separator + "${groupPath}" + File.separator + "${dep.name}"+ File.separator + "${dep.version}" + File.separator + "${dep.name}-${dep.version}.jar")
-            newJarFile.mkdirs()
-            Files.copy(f.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
+            FileCollection fileCollection = configurations.runtimeClasspath.filter { it.absolutePath.contains("${dep.group}" + File.separator + "${dep.name}" + File.separator + "${dep.version}") }
+            if (fileCollection.isEmpty()) {
+                println "runtimeClasspath is empty for dependency ${dep.group}" + File.separator + "${dep.name}" + File.separator + "${dep.version}"
+            } else {
+                File f = fileCollection.singleFile
+                String groupPath = dep.group.replaceAll('\\.', '/')
+                File newJarFile = file("${vendorPathPrefix}" + File.separator + "${groupPath}" + File.separator + "${dep.name}" + File.separator + "${dep.version}" + File.separator + "${dep.name}-${dep.version}.jar")
+                newJarFile.mkdirs()
+                Files.copy(f.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
+            }
         }
     }
 }
