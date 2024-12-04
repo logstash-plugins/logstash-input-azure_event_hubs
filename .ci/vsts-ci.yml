@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/java
 
 variables:
-  BuildDirectory: '$(Build.SourcesDirectory)\logstash-input-azure_event_hubs_uipath'
+  BuildDirectory: '$(Build.SourcesDirectory)/logstash-input-azure_event_hubs'
   LS_HOME: '$(Build.SourcesDirectory)/logstash'
   pluginVersion: '1.5.0'
 
@@ -26,10 +26,7 @@ steps:
   - checkout: self
   - checkout: logstash
 
-  - script: echo LOGSTASH_CORE_PATH=../logstash/logstash-core> $(BuildDirectory)\gradle.properties
-    displayName: "Create gradle.properties"
-
-  - script: mkdir $(BuildDirectory)\package
+  - script: mkdir $(BuildDirectory)/package
     displayName: "Create the package folder"
 
   - task: Gradle@3
@@ -53,9 +50,8 @@ steps:
       javaHomeOption: 'JDKVersion'
       jdkVersionOption: '1.17'
       jdkArchitectureOption: 'x64'
-      publishJUnitResults: true
-      testResultsFiles: '$(BuildDirectory)/build/test-results/**/TEST-*.xml'
-      tasks: 'build test gem'
+      publishJUnitResults: false
+      tasks: 'build gem'
 
   - powershell: |
       Move-Item "$(BuildDirectory)/*.gem" -Destination "$(BuildDirectory)/package/"
@@ -73,7 +69,7 @@ steps:
     inputs:
       command: publish
       publishDirectory: '$(BuildDirectory)/package'
-      vstsFeedPublish: 'Orchestrator/Orchestrator'
+      vstsFeedPublish: 'UiPath-DevPackages'
       vstsFeedPackagePublish: 'logstash-$(Logstash.Version)-input-event-hubs-uipath'
       versionOption: custom
       versionPublish: $(pluginVersion)
