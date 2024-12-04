@@ -1,5 +1,5 @@
 # encoding: utf-8
-require "logstash-input-azure_event_hubs"
+require "logstash-input-azure_event_hubs_uipath"
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "stud/interval"
@@ -8,7 +8,7 @@ require "logstash/inputs/error_notification_handler"
 require "logstash/inputs/named_thread_factory"
 require "logstash/inputs/look_back_position_provider"
 
-class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
+class LogStash::Inputs::AzureEventHubsUipath < LogStash::Inputs::Base
 
   java_import com.microsoft.azure.eventprocessorhost.EventProcessorHost
   java_import com.microsoft.azure.eventprocessorhost.EventProcessorOptions
@@ -20,7 +20,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   java_import java.util.concurrent.TimeUnit
   java_import java.time.Duration
 
-  config_name "azure_event_hubs"
+  config_name "azure_event_hubs_uipath"
 
   # This plugin supports two styles of configuration
   # basic - You supply a list of Event Hub connection strings complete with the 'EntityPath' that defines the Event Hub name. All other configuration is shared.
@@ -291,6 +291,8 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   # }
   config :decorate_events, :validate => :boolean, :default => false
 
+  config :checkpoint_each_batch, :validate => :boolean, :default => true
+
   attr_reader :count
 
   def initialize(params)
@@ -439,7 +441,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
             @logger.info(msg) unless event_hub['storage_connection']
             options.setInitialPositionProvider(LogStash::Inputs::Azure::LookBackPositionProvider.new(@initial_position_look_back))
           end
-          event_processor_host.registerEventProcessorFactory(LogStash::Inputs::Azure::ProcessorFactory.new(queue, event_hub['codec'], event_hub['checkpoint_interval'], self.method(:decorate), event_hub['decorate_events']), options)
+          event_processor_host.registerEventProcessorFactory(LogStash::Inputs::Azure::ProcessorFactory.new(queue, event_hub['codec'], event_hub['checkpoint_interval'], self.method(:decorate), event_hub['decorate_events'], event_hub['checkpoint_each_batch']), options)
               .when_complete(lambda {|x, e|
                 @logger.info("Event Hub registration complete. ", :event_hub_name => event_hub_name )
                 @logger.error("Event Hub failure while registering.", :event_hub_name => event_hub_name, :exception => e, :backtrace => e.backtrace) if e

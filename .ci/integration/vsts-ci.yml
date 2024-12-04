@@ -1,0 +1,80 @@
+# Gradle
+# Build your Java project and run tests with Gradle using a Gradle wrapper script.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+variables:
+  BuildDirectory: '$(Build.SourcesDirectory)\logstash-input-azure_event_hubs_uipath'
+  LS_HOME: '$(Build.SourcesDirectory)/logstash'
+  pluginVersion: '1.5.0'
+
+resources:
+  repositories:
+  - repository: logstash # The name used to reference this repository in the checkout step
+    type: github
+    ref: refs/heads/$(Logstash.Version)
+    endpoint: UiPath
+    name: elastic/logstash
+
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+  - checkout: self
+  - checkout: logstash
+
+  - script: echo LOGSTASH_CORE_PATH=../logstash/logstash-core> $(BuildDirectory)\gradle.properties
+    displayName: "Create gradle.properties"
+
+  - script: mkdir $(BuildDirectory)\package
+    displayName: "Create the package folder"
+
+  - task: Gradle@3
+    displayName: "Build Logstash"
+    inputs:
+      workingDirectory: '$(LS_HOME)'
+      gradleWrapperFile: '$(LS_HOME)/gradlew'
+      gradleOptions: '-Xmx3072m'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.17'
+      jdkArchitectureOption: 'x64'
+      publishJUnitResults: false
+      tasks: 'assemble'
+
+  - task: Gradle@3
+    displayName: "Build plugin"
+    inputs:
+      workingDirectory: '$(BuildDirectory)'
+      gradleWrapperFile: '$(BuildDirectory)/gradlew'
+      gradleOptions: '-Xmx3072m'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.17'
+      jdkArchitectureOption: 'x64'
+      publishJUnitResults: true
+      testResultsFiles: '$(BuildDirectory)/build/test-results/**/TEST-*.xml'
+      tasks: 'build test gem'
+
+  - powershell: |
+      Move-Item "$(BuildDirectory)/*.gem" -Destination "$(BuildDirectory)/package/"
+    displayName: "Move the plugin gem to the package folder"
+
+  - task: PublishBuildArtifacts@1
+    displayName: "Publish Logstash Input Plugin Gem"
+    inputs:
+      PathtoPublish: '$(BuildDirectory)/package'
+      ArtifactName: 'LogstashInputAzureEventHubsUiPath'
+      publishLocation: 'Container'
+
+  - task: UniversalPackages@0
+    displayName: Universal Publish
+    inputs:
+      command: publish
+      publishDirectory: '$(BuildDirectory)/package'
+      vstsFeedPublish: 'Orchestrator/Orchestrator'
+      vstsFeedPackagePublish: 'logstash-$(Logstash.Version)-input-event-hubs-uipath'
+      versionOption: custom
+      versionPublish: $(pluginVersion)
+      packagePublishDescription: 'Input plugin for Logstash - reads event hub messages from Azure Event Hubs'
