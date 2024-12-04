@@ -7,14 +7,15 @@ module LogStash
         include LogStash::Util::Loggable
         include com.microsoft.azure.eventprocessorhost.IEventProcessor
 
-        def initialize(queue, codec, checkpoint_interval, decorator, meta_data)
+        def initialize(queue, codec, checkpoint_interval, decorator, meta_data, checkpoint_each_batch)
           @queue = queue
           @codec = codec
           @checkpoint_interval = checkpoint_interval
           @decorator = decorator
           @meta_data = meta_data
           @logger = self.logger
-
+          @last_checkpoint = Time.now.to_i
+          @checkpoint_each_batch = checkpoint_each_batch
         end
 
         def onOpen(context)
@@ -30,7 +31,6 @@ module LogStash
           last_payload = nil
           batch_size = 0
           batch.each do |payload|
-            last_checkpoint = Time.now.to_i
             bytes = payload.getBytes
             batch_size += bytes.size
             @logger.trace("Event Hub: #{context.getEventHubPath.to_s}, Partition: #{context.getPartitionId.to_s}, Offset: #{payload.getSystemProperties.getOffset.to_s},"+
@@ -53,10 +53,10 @@ module LogStash
               @queue << event
               if @checkpoint_interval > 0
                 now = Time.now.to_i
-                since_last_check_point = now - last_checkpoint
+                since_last_check_point = now - @last_checkpoint
                 if since_last_check_point >= @checkpoint_interval
                   context.checkpoint(payload).get
-                  last_checkpoint = now
+                  @last_checkpoint = now
                 end
               end
             end
@@ -64,8 +64,18 @@ module LogStash
           end
 
           @codec.flush
-          #always create checkpoint at end of onEvents in case of sparse events
-          context.checkpoint(last_payload).get if last_payload
+
+          now = Time.now.to_i
+          since_last_check_point = now - @last_checkpoint
+
+          #create checkpoint at end of onEvents in case no interval checkpoint is set or interval is reached or checkpoint each batch option is set
+          if @checkpoint_each_batch || @checkpoint_interval == 0 || @checkpoint_interval > 0 && since_last_check_point >= @checkpoint_interval
+            if last_payload
+              context.checkpoint(last_payload).get
+              @last_checkpoint = now
+              @logger.debug("Event Hub: #{context.getEventHubPath.to_s}, Partition: #{context.getPartitionId.to_s} checkpointed.") if @logger.debug?
+            end
+          end
           @logger.debug("Event Hub: #{context.getEventHubPath.to_s}, Partition: #{context.getPartitionId.to_s} finished processing a batch of #{batch_size} bytes.") if @logger.debug?
         end
 

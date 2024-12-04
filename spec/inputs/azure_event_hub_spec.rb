@@ -1,15 +1,15 @@
 # encoding: utf-8
 require "logstash/devutils/rspec/spec_helper"
-require "logstash/inputs/azure_event_hubs"
+require "logstash/inputs/azure_event_hubs_uipath"
 
 java_import com.microsoft.azure.eventprocessorhost.EventProcessorHost
 java_import com.microsoft.azure.eventprocessorhost.InMemoryCheckpointManager
 java_import com.microsoft.azure.eventprocessorhost.InMemoryLeaseManager
 
-describe LogStash::Inputs::AzureEventHubs do
+describe LogStash::Inputs::AzureEventHubsUipath do
 
 
-  subject(:input) {LogStash::Plugin.lookup("input", "azure_event_hubs").new(config)}
+  subject(:input) {LogStash::Plugin.lookup("input", "azure_event_hubs_uipath").new(config)}
 
   describe "Event Hubs Configuration -> " do
     shared_examples "an exploded Event Hub config" do |x|
@@ -25,6 +25,7 @@ describe LogStash::Inputs::AzureEventHubs do
           expect(exploded_config[i]['consumer_group']).to eql('cg')
           expect(exploded_config[i]['max_batch_size']).to be == 20
           expect(exploded_config[i]['prefetch_count']).to be == 30
+          expect(exploded_config[i]['checkpoint_each_batch']).to be_truthy
           expect(exploded_config[i]['receive_timeout']).to be == 40
           expect(exploded_config[i]['initial_position']).to eql('look_back')
           expect(exploded_config[i]['initial_position_look_back']).to be == 50
@@ -51,7 +52,8 @@ describe LogStash::Inputs::AzureEventHubs do
             'initial_position' => 'look_back',
             'initial_position_look_back' => 50,
             'checkpoint_interval' => 60,
-            'decorate_events' => true
+            'decorate_events' => true,
+            'checkpoint_each_batch' => true,
         }
       end
       it_behaves_like "an exploded Event Hub config", 2
@@ -161,7 +163,8 @@ describe LogStash::Inputs::AzureEventHubs do
                     'initial_position' => 'look_back',
                     'initial_position_look_back' => 50,
                     'checkpoint_interval' => 60,
-                    'decorate_events' => true}},
+                    'decorate_events' => true,
+                    'checkpoint_each_batch' => true}},
                 {'event_hub_name1' => {
                     'event_hub_connection' => '1Endpoint=sb://...',
                     'storage_connection' => '1DefaultEndpointsProtocol=https;AccountName=...',
@@ -171,6 +174,7 @@ describe LogStash::Inputs::AzureEventHubs do
                     'initial_position' => 'end',
                     'checkpoint_interval' => 61,
                     'decorate_events' => false,
+                    'checkpoint_each_batch' => false,
                     'storage_container' => 'alt_container'}},
                 # same named event hub with different configuration is allowed
                 {'event_hub_name0' => {
@@ -200,6 +204,7 @@ describe LogStash::Inputs::AzureEventHubs do
         expect(exploded_config[1]['initial_position_look_back']).to be == 86400 # default
         expect(exploded_config[1]['checkpoint_interval']).to be == 61
         expect(exploded_config[1]['decorate_events']).to be_falsy
+        expect(exploded_config[1]['checkpoint_each_batch']. to be_falsy)
         expect(exploded_config[1]['storage_container']).to eq('alt_container')
       end
 
