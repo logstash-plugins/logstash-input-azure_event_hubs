@@ -142,12 +142,6 @@ task vendor {
     }
 }
 
-task generateRubySupportFiles() {
-    doLast {
-        generateRubySupportFilesForPlugin(project.description, project.group, version)
-    }
-}
-
 task removeObsoleteJars() {
     doLast {
         new FileNameFinder().getFileNames(
@@ -159,7 +153,7 @@ task removeObsoleteJars() {
     }
 }
 
-task gem(dependsOn: [downloadAndInstallJRuby, removeObsoleteJars, vendor, generateRubySupportFiles]) {
+task gem(dependsOn: [downloadAndInstallJRuby, removeObsoleteJars, vendor]) {
     doLast {
         buildGem(projectDir, buildDir, pluginInfo.pluginFullName() + ".gemspec")
     }
