@@ -17,7 +17,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.1'
 
     implementation 'com.microsoft.azure:azure-eventhubs:3.3.0'
 
@@ -42,9 +42,10 @@ dependencies {
     implementation 'com.nimbusds:lang-tag:1.7'
     implementation 'com.nimbusds:nimbus-jose-jwt:9.37.2'
     implementation 'com.nimbusds:oauth2-oidc-sdk:8.36.2'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
-    implementation 'com.squareup.okhttp3:okhttp-urlconnection:4.9.3'
-    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    implementation 'com.squareup.okhttp3:okhttp-urlconnection:4.12.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0'
     implementation 'com.squareup.retrofit2:adapter-rxjava:2.7.2'
     implementation 'com.squareup.retrofit2:converter-jackson:2.7.2'
     implementation 'com.squareup.retrofit2:retrofit:2.7.2'
