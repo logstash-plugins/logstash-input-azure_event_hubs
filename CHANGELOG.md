@@ -1,5 +1,5 @@
 ## 1.5.2
-  - Updated Java dependencies
+  - Updated JWT dependency [#101](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/101)
 
 ## 1.5.1
   - Updated multiple Java dependencies [#99](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/99)
