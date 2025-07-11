@@ -40,7 +40,7 @@ dependencies {
     implementation 'com.github.stephenc.jcip:jcip-annotations:1.0-1'
     implementation 'com.google.guava:guava:32.0.1-jre'
     implementation 'com.nimbusds:lang-tag:1.7'
-    implementation 'com.nimbusds:nimbus-jose-jwt:9.37.2'
+    implementation 'com.nimbusds:nimbus-jose-jwt:10.0.2'
     implementation 'com.nimbusds:oauth2-oidc-sdk:8.36.2'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.squareup.okhttp3:okhttp-urlconnection:4.12.0'
