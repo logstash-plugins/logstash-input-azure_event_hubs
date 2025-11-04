@@ -417,12 +417,12 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
             event_processor_host = create_in_memory_event_processor_host(event_hub, event_hub_name, scheduled_executor_service)
           end
           options = EventProcessorOptions.new
-          options.setMaxBatchSize(max_batch_size)
-          options.setPrefetchCount(prefetch_count)
-          options.setReceiveTimeOut(Duration.ofSeconds(receive_timeout))
+          options.setMaxBatchSize(event_hub['max_batch_size'])
+          options.setPrefetchCount(event_hub['prefetch_count'])
+          options.setReceiveTimeOut(Duration.ofSeconds(event_hub['receive_timeout']))
           
           options.setExceptionNotification(LogStash::Inputs::Azure::ErrorNotificationHandler.new)
-          case @initial_position
+          case event_hub['initial_position']
           when 'beginning'
             msg = "Configuring Event Hub #{event_hub_name} to read events all events."
             @logger.debug("If this is the initial read... " + msg) if event_hub['storage_connection']
@@ -434,10 +434,10 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
             @logger.info(msg) unless event_hub['storage_connection']
             options.setInitialPositionProvider(EventProcessorOptions::EndOfStreamInitialPositionProvider.new(options))
           when 'look_back'
-            msg = "Configuring Event Hub #{event_hub_name} to read events starting at 'now - #{@initial_position_look_back}' seconds."
+            msg = "Configuring Event Hub #{event_hub_name} to read events starting at 'now - #{event_hub['initial_position_look_back']}' seconds."
             @logger.debug("If this is the initial read... " + msg) if event_hub['storage_connection']
             @logger.info(msg) unless event_hub['storage_connection']
-            options.setInitialPositionProvider(LogStash::Inputs::Azure::LookBackPositionProvider.new(@initial_position_look_back))
+            options.setInitialPositionProvider(LogStash::Inputs::Azure::LookBackPositionProvider.new(event_hub['initial_position_look_back']))
           end
           event_processor_host.registerEventProcessorFactory(LogStash::Inputs::Azure::ProcessorFactory.new(queue, event_hub['codec'], event_hub['checkpoint_interval'], self.method(:decorate), event_hub['decorate_events']), options)
               .when_complete(lambda {|x, e|

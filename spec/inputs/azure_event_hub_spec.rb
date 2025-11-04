@@ -175,32 +175,57 @@ describe LogStash::Inputs::AzureEventHubs do
                 # same named event hub with different configuration is allowed
                 {'event_hub_name0' => {
                     'event_hub_connection' => 'Endpoint=sb://...',
+                    'storage_connection' => 'DefaultEndpointsProtocol=https;AccountName=...',
                     'consumer_group' => 'ls'}}
             ],
             'codec' => 'plain',
             'consumer_group' => 'default_consumer_group',
             'max_batch_size' => 21,
+            'prefetch_count' => 250,
+            'receive_timeout' => 90,
+            'initial_position' => 'beginning',
+            'initial_position_look_back' => 7200,
+            'checkpoint_interval' => 15,
+            'decorate_events' => false,
             'threads' => 9
         }
       end
       it_behaves_like "an exploded Event Hub config", 1
-      it "it explodes the 2cnd advanced config event hub correctly" do
+
+      it "it explodes the second advanced config event hub correctly (with individual and inherited settings)" do
         exploded_config = input.event_hubs_exploded
         expect(exploded_config[1]['event_hubs'].size).to be == 1 #always 1 in the exploded form
         expect(exploded_config[1]['event_hubs'][0]).to eql('event_hub_name1')
         expect(exploded_config[1]['event_hub_connections'][0].value).to eql('1Endpoint=sb://...')
         expect(exploded_config[1]['storage_connection'].value).to eql('1DefaultEndpointsProtocol=https;AccountName=...')
         expect(exploded_config[1]['threads']).to be == 9
-        expect(exploded_config[1]['codec'].class.to_s).to eq("LogStash::Codecs::JSON") # different between configs
-        expect(exploded_config[1]['consumer_group']).to eql('cg1') # override global
-        expect(exploded_config[1]['max_batch_size']).to be == 21 # filled from global
-        expect(exploded_config[1]['prefetch_count']).to be == 300 # default
+        expect(exploded_config[1]['codec'].class.to_s).to eq("LogStash::Codecs::JSON")
+        expect(exploded_config[1]['consumer_group']).to eql('cg1')
+        expect(exploded_config[1]['max_batch_size']).to be == 21
+        expect(exploded_config[1]['prefetch_count']).to be == 250
         expect(exploded_config[1]['receive_timeout']).to be == 41
         expect(exploded_config[1]['initial_position']).to eql('end')
-        expect(exploded_config[1]['initial_position_look_back']).to be == 86400 # default
+        expect(exploded_config[1]['initial_position_look_back']).to be == 7200
         expect(exploded_config[1]['checkpoint_interval']).to be == 61
         expect(exploded_config[1]['decorate_events']).to be_falsy
         expect(exploded_config[1]['storage_container']).to eq('alt_container')
+      end
+
+      it "it explodes the third advanced config event hub correctly (mostly inherited settings)" do
+        exploded_config = input.event_hubs_exploded
+        expect(exploded_config[2]['event_hubs'].size).to be == 1
+        expect(exploded_config[2]['event_hubs'][0]).to eql('event_hub_name0')
+        expect(exploded_config[2]['event_hub_connections'][0].value).to eql('Endpoint=sb://...')
+        expect(exploded_config[2]['storage_connection'].value).to eql('DefaultEndpointsProtocol=https;AccountName=...')
+        expect(exploded_config[2]['threads']).to be == 9
+        expect(exploded_config[2]['codec'].class.to_s).to eq("LogStash::Codecs::Plain")
+        expect(exploded_config[2]['consumer_group']).to eql('ls')
+        expect(exploded_config[2]['max_batch_size']).to be == 21
+        expect(exploded_config[2]['prefetch_count']).to be == 250
+        expect(exploded_config[2]['receive_timeout']).to be == 90
+        expect(exploded_config[2]['initial_position']).to eql('beginning')
+        expect(exploded_config[2]['initial_position_look_back']).to be == 7200
+        expect(exploded_config[2]['checkpoint_interval']).to be == 15
       end
 
       it "it runs the Event Processor Host" do
