@@ -1,3 +1,6 @@
+## 1.5.4
+  - Unused `adal4j` dependency removed [#107](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/107)
+
 ## 1.5.3
   - Fix: With `config_mode => 'advanced'`, event hub-specific settings (`initial_position`, `max_batch_size`, `prefetch_count`, `receive_timeout`, `initial_position_look_back`) were being ignored and replaced with global defaults. These settings are now correctly applied per event hub [#104](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/104)
 
