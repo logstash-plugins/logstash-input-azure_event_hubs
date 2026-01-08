@@ -45,17 +45,19 @@ task generateGemJarRequiresFile {
 task vendor {
     doLast {
         String vendorPathPrefix = "vendor/jar-dependencies"
-        configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { artifact ->
-            def moduleId = artifact.moduleVersion.id
-            String group = moduleId.group
-            String name = moduleId.name
-            String version = moduleId.version
-            String groupPath = group.replaceAll('\\.', '/')
-            File newJarFile = file("${vendorPathPrefix}/${groupPath}/${name}/${version}/${name}-${version}.jar")
-            if (!newJarFile.parentFile.exists()) {
-                newJarFile.parentFile.mkdirs()
+        configurations.runtimeClasspath.incoming.artifacts.artifacts.each { artifact ->
+            def id = artifact.id.componentIdentifier
+            if (id instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier) {
+                String group = id.group
+                String name = id.module
+                String version = id.version
+                String groupPath = group.replaceAll('\\.', '/')
+                File newJarFile = file("${vendorPathPrefix}/${groupPath}/${name}/${version}/${name}-${version}.jar")
+                if (!newJarFile.parentFile.exists()) {
+                    newJarFile.parentFile.mkdirs()
+                }
+                Files.copy(artifact.file.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
             }
-            Files.copy(artifact.file.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
         }
     }
 }
