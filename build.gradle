@@ -77,20 +77,21 @@ task generateGemJarRequiresFile {
 task vendor {
     doLast {
         String vendorPathPrefix = "vendor/jar-dependencies"
-        configurations.runtimeClasspath.allDependencies.each { dep ->
-            FileCollection fileCollection = configurations.runtimeClasspath.filter { it.absolutePath.contains("${dep.group}" + File.separator + "${dep.name}" + File.separator + "${dep.version}") }
-            if (fileCollection.isEmpty()) {
-                println "runtimeClasspath is empty for dependency ${dep.group}" + File.separator + "${dep.name}" + File.separator + "${dep.version}"
-            } else {
-                File f = fileCollection.singleFile
-                String groupPath = dep.group.replaceAll('\\.', '/')
-                File newJarFile = file("${vendorPathPrefix}" + File.separator + "${groupPath}" + File.separator + "${dep.name}" + File.separator + "${dep.version}" + File.separator + "${dep.name}-${dep.version}.jar")
-                newJarFile.mkdirs()
-                Files.copy(f.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
+        configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def moduleId = artifact.moduleVersion.id
+            String group = moduleId.group
+            String name = moduleId.name
+            String version = moduleId.version
+            String groupPath = group.replaceAll('\\.', '/')
+            File newJarFile = file("${vendorPathPrefix}/${groupPath}/${name}/${version}/${name}-${version}.jar")
+            if (!newJarFile.parentFile.exists()) {
+                newJarFile.parentFile.mkdirs()
             }
+            Files.copy(artifact.file.toPath(), newJarFile.toPath(), REPLACE_EXISTING)
         }
     }
 }
+
 
 vendor.dependsOn(generateGemJarRequiresFile)
 
