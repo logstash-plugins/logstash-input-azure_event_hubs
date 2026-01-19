@@ -3,22 +3,24 @@ require "logstash-input-azure_event_hubs"
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "stud/interval"
-require "logstash/inputs/processor_factory"
+require "logstash/inputs/processor"
 require "logstash/inputs/error_notification_handler"
-require "logstash/inputs/named_thread_factory"
-require "logstash/inputs/look_back_position_provider"
 
 class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
 
-  java_import com.microsoft.azure.eventprocessorhost.EventProcessorHost
-  java_import com.microsoft.azure.eventprocessorhost.EventProcessorOptions
-  java_import com.microsoft.azure.eventprocessorhost.InMemoryCheckpointManager
-  java_import com.microsoft.azure.eventprocessorhost.InMemoryLeaseManager
-  java_import com.microsoft.azure.eventprocessorhost.HostContext
-  java_import com.microsoft.azure.eventhubs.ConnectionStringBuilder
-  java_import java.util.concurrent.Executors
-  java_import java.util.concurrent.TimeUnit
+  java_import com.azure.messaging.eventhubs.EventProcessorClient
+  java_import com.azure.messaging.eventhubs.EventProcessorClientBuilder
+  java_import com.azure.messaging.eventhubs.checkpointstore.blob.BlobCheckpointStore
+  java_import com.azure.messaging.eventhubs.models.EventPosition
+  java_import com.azure.messaging.eventhubs.models.ErrorContext
+  java_import com.azure.messaging.eventhubs.models.EventContext
+  java_import com.azure.messaging.eventhubs.models.PartitionContext
+  java_import com.azure.storage.blob.BlobContainerClientBuilder
+  java_import com.azure.storage.blob.BlobContainerAsyncClient
+  java_import java.time.Instant
   java_import java.time.Duration
+  java_import java.util.HashMap
+  java_import java.util.function.Consumer
 
   config_name "azure_event_hubs"
 
@@ -244,7 +246,7 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   config :initial_position_look_back, :validate => :number, :default => 86400
 
   # The interval in seconds between writing checkpoint while processing a batch. Default 5 seconds. Checkpoints can slow down processing, but are needed to know where to start after a restart.
-  # Note - checkpoints happen after every batch, so this configuration is only applicable while processing a single batch.
+  # Note - checkpoints happen after each batch, so this configuration is only applicable while processing a single batch.
   # Value is expressed in seconds, set to zero to disable
   # basic Example:
   # azure_event_hubs {
@@ -333,12 +335,12 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
         connections.each.with_index do |_connection, i|
           begin
             connection = replace_connection_placeholders(_connection)
-            event_hub_name = ConnectionStringBuilder.new(connection).getEventHubName
-            redacted_connection = connection.gsub(/(SharedAccessKey=)([0-9a-zA-Z=+]*)([;]*)(.*)/, '\\1<redacted>\\3\\4')
+            event_hub_name = extract_event_hub_name(connection)
+            redacted_connection = connection.gsub(/(SharedAccessKey=)([0-9a-zA-Z=+\/]*)([;]*)(.*)/, '\\1<redacted>\\3\\4')
             params['event_hub_connections'][i] = redacted_connection # protect from leaking logs
             raise "invalid Event Hub name" unless event_hub_name
-          rescue
-            raise LogStash::ConfigurationError, "Error parsing event hub string name for connection: '#{redacted_connection}' please ensure that the connection string contains the EntityPath"
+          rescue => e
+            raise LogStash::ConfigurationError, "Error parsing event hub string name for connection: '#{redacted_connection}' please ensure that the connection string contains the EntityPath. Error: #{e.message}"
           end
           @event_hubs_exploded << {'event_hubs' => [event_hub_name]}.merge({'event_hub_connections' => [::LogStash::Util::Password.new(connection)]}).merge(global_config) {|k, v1, v2| v1}
         end
@@ -379,6 +381,13 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
     connection
   end
 
+  # Extract Event Hub name from connection string (replaces ConnectionStringBuilder)
+  def extract_event_hub_name(connection_string)
+    # Parse EntityPath from connection string
+    match = connection_string.match(/EntityPath=([^;]+)/i)
+    match ? match[1] : nil
+  end
+
   def register
     # augment the exploded config with the defaults
     @event_hubs_exploded.each do |event_hub|
@@ -392,77 +401,40 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
   end
 
   def run(queue)
+    @event_processor_clients = []
     event_hub_threads = []
-    named_thread_factory = LogStash::Inputs::Azure::NamedThreadFactory.new("azure_event_hubs-worker", @id)
-    scheduled_executor_service = Executors.newScheduledThreadPool(@threads, named_thread_factory)
+
     @event_hubs_exploded.each do |event_hub|
       event_hub_threads << Thread.new do
         event_hub_name = event_hub['event_hubs'].first # there will always only be 1 from @event_hubs_exploded
         @logger.info("Event Hub #{event_hub_name} is initializing... ")
         begin
-          if event_hub['storage_connection']
-            event_processor_host = EventProcessorHost::EventProcessorHostBuilder.newBuilder(EventProcessorHost.createHostName('logstash'), event_hub['consumer_group'])
-                                                         .useAzureStorageCheckpointLeaseManager(
-                                                           event_hub['storage_connection'].value,
-                                                           event_hub.fetch('storage_container', event_hub_name),
-                                                           nil
-                                                         )
-                                                         .useEventHubConnectionString(
-                                                           event_hub['event_hub_connections'].first.value, #there will only be one in this array by the time it gets here
-                                                         )
-                                                     .setExecutor(scheduled_executor_service)
-                                                     .build
-          else
-            @logger.warn("You have NOT specified a `storage_connection_string` for #{event_hub_name}. This configuration is only supported for a single Logstash instance.")
-            event_processor_host = create_in_memory_event_processor_host(event_hub, event_hub_name, scheduled_executor_service)
+          processor = LogStash::Inputs::Azure::Processor.new(
+            queue,
+            event_hub['codec'],
+            event_hub['checkpoint_interval'],
+            self.method(:decorate),
+            event_hub['decorate_events']
+          )
+
+          event_processor_client = build_event_processor_client(event_hub, event_hub_name, processor)
+          @event_processor_clients << event_processor_client
+
+          @logger.info("Starting Event Hub processor...", :event_hub_name => event_hub_name)
+          event_processor_client.start
+
+          @logger.info("Event Hub is processing events... ", :event_hub_name => event_hub_name)
+          # Block until stop is signaled
+          while !stop?
+            Stud.stoppable_sleep(1) {stop?}
           end
-          options = EventProcessorOptions.new
-          options.setMaxBatchSize(event_hub['max_batch_size'])
-          options.setPrefetchCount(event_hub['prefetch_count'])
-          options.setReceiveTimeOut(Duration.ofSeconds(event_hub['receive_timeout']))
-          
-          options.setExceptionNotification(LogStash::Inputs::Azure::ErrorNotificationHandler.new)
-          case event_hub['initial_position']
-          when 'beginning'
-            msg = "Configuring Event Hub #{event_hub_name} to read events all events."
-            @logger.debug("If this is the initial read... " + msg) if event_hub['storage_connection']
-            @logger.info(msg) unless event_hub['storage_connection']
-            options.setInitialPositionProvider(EventProcessorOptions::StartOfStreamInitialPositionProvider.new(options))
-          when 'end'
-            msg = "Configuring Event Hub #{event_hub_name} to read only new events."
-            @logger.debug("If this is the initial read... " + msg) if event_hub['storage_connection']
-            @logger.info(msg) unless event_hub['storage_connection']
-            options.setInitialPositionProvider(EventProcessorOptions::EndOfStreamInitialPositionProvider.new(options))
-          when 'look_back'
-            msg = "Configuring Event Hub #{event_hub_name} to read events starting at 'now - #{event_hub['initial_position_look_back']}' seconds."
-            @logger.debug("If this is the initial read... " + msg) if event_hub['storage_connection']
-            @logger.info(msg) unless event_hub['storage_connection']
-            options.setInitialPositionProvider(LogStash::Inputs::Azure::LookBackPositionProvider.new(event_hub['initial_position_look_back']))
-          end
-          event_processor_host.registerEventProcessorFactory(LogStash::Inputs::Azure::ProcessorFactory.new(queue, event_hub['codec'], event_hub['checkpoint_interval'], self.method(:decorate), event_hub['decorate_events']), options)
-              .when_complete(lambda {|x, e|
-                @logger.info("Event Hub registration complete. ", :event_hub_name => event_hub_name )
-                @logger.error("Event Hub failure while registering.", :event_hub_name => event_hub_name, :exception => e, :backtrace => e.backtrace) if e
-              })
-              .then_accept(lambda {|x|
-                @logger.info("Event Hub is processing events... ", :event_hub_name => event_hub_name )
-                # this blocks the completable future chain from progressing, actual work is done via the executor service
-                while !stop?
-                  Stud.stoppable_sleep(1) {stop?}
-                end
-              })
-              .then_compose(lambda {|x|
-                @logger.info("Unregistering Event Hub this can take a while... ", :event_hub_name => event_hub_name )
-                event_processor_host.unregisterEventProcessor
-              })
-              .exceptionally(lambda {|e|
-                @logger.error("Event Hub encountered an error.", :event_hub_name => event_hub_name , :exception => e, :backtrace => e.backtrace) if e
-                nil
-              })
-              .get # this blocks till all of the futures are complete.
+
+          @logger.info("Stopping Event Hub processor, this can take a while... ", :event_hub_name => event_hub_name)
+          event_processor_client.stop
+
           @logger.info("Event Hub #{event_hub_name} is closed.")
         rescue => e
-          @logger.error("Event Hub failed during initialization.", :event_hub_name => event_hub_name, :exception => e, :backtrace => e.backtrace) if e
+          @logger.error("Event Hub failed during processing.", :event_hub_name => event_hub_name, :exception => e, :backtrace => e.backtrace) if e
           do_stop
         end
       end
@@ -477,43 +449,113 @@ class LogStash::Inputs::AzureEventHubs < LogStash::Inputs::Base
     event_hub_threads.each do |thread|
       thread.join
     end
+  end
 
-    # Ensure proper shutdown of executor service. # Note - this causes a harmless warning in the logs that scheduled tasks are being rejected.
-    scheduled_executor_service.shutdown
-    begin
-      scheduled_executor_service.awaitTermination(10, TimeUnit::MINUTES);
-    rescue => e
-      @logger.debug("interrupted while waiting to close executor service, this can generally be ignored", :exception => e, :backtrace => e.backtrace) if e
+  def build_event_processor_client(event_hub, event_hub_name, processor)
+    builder = EventProcessorClientBuilder.new
+      .consumerGroup(event_hub['consumer_group'])
+      .connectionString(
+        event_hub['event_hub_connections'].first.value, # there will only be one in this array by the time it gets here
+        event_hub_name
+      )
+      .processEvent(processor.method(:process_event).to_proc)
+      .processError(LogStash::Inputs::Azure::ErrorNotificationHandler.new.method(:handle_error).to_proc)
+
+    # Configure checkpoint store
+    if event_hub['storage_connection']
+      container_name = event_hub.fetch('storage_container', event_hub_name)
+      blob_container_client = BlobContainerClientBuilder.new
+        .connectionString(event_hub['storage_connection'].value)
+        .containerName(container_name)
+        .buildAsyncClient
+
+      checkpoint_store = BlobCheckpointStore.new(blob_container_client)
+      builder = builder.checkpointStore(checkpoint_store)
+      @logger.debug("Using Azure Blob Storage for checkpointing", :container => container_name)
+    else
+      @logger.warn("You have NOT specified a `storage_connection` for #{event_hub_name}. This configuration is only supported for a single Logstash instance. Using in-memory checkpoint store.")
+      # For in-memory, we still need a checkpoint store - use a no-op implementation
+      builder = builder.checkpointStore(InMemoryCheckpointStore.new)
+    end
+
+    # Configure initial position
+    initial_position = get_initial_position(event_hub)
+    builder = builder.initialPartitionEventPosition { |partition_id| initial_position }
+
+    # Configure batch size and prefetch
+    builder = builder
+      .prefetchCount(event_hub['prefetch_count'])
+
+    builder.buildEventProcessorClient
+  end
+
+  def get_initial_position(event_hub)
+    case event_hub['initial_position']
+    when 'beginning'
+      msg = "Configuring Event Hub #{event_hub['event_hubs'].first} to read all events."
+      @logger.debug("If this is the initial read... " + msg) if event_hub['storage_connection']
+      @logger.info(msg) unless event_hub['storage_connection']
+      EventPosition.earliest
+    when 'end'
+      msg = "Configuring Event Hub #{event_hub['event_hubs'].first} to read only new events."
+      @logger.debug("If this is the initial read... " + msg) if event_hub['storage_connection']
+      @logger.info(msg) unless event_hub['storage_connection']
+      EventPosition.latest
+    when 'look_back'
+      look_back_time = Instant.now.minusSeconds(event_hub['initial_position_look_back'].to_i)
+      msg = "Configuring Event Hub #{event_hub['event_hubs'].first} to read events starting at 'now - #{event_hub['initial_position_look_back']}' seconds."
+      @logger.debug("If this is the initial read... " + msg) if event_hub['storage_connection']
+      @logger.info(msg) unless event_hub['storage_connection']
+      EventPosition.fromEnqueuedTime(look_back_time)
+    else
+      EventPosition.earliest
     end
   end
 
-  def create_in_memory_event_processor_host(event_hub, event_hub_name, scheduled_executor_service)
-    checkpoint_manager = InMemoryCheckpointManager.new
-    lease_manager = InMemoryLeaseManager.new
-    event_processor_host = EventProcessorHost::EventProcessorHostBuilder.newBuilder(EventProcessorHost.createHostName('logstash'), event_hub['consumer_group'])
-                                             .useUserCheckpointAndLeaseManagers(checkpoint_manager, lease_manager)
-                                             .useEventHubConnectionString(event_hub['event_hub_connections'].first.value) #there will only be one in this array by the time it gets here
-                                             .setExecutor(scheduled_executor_service)
-                                             .build
-    host_context = get_host_context(event_processor_host)
-    #using java_send to avoid naming conflicts with 'initialize' method
-    lease_manager.java_send :initialize, [HostContext], host_context
-    checkpoint_manager.java_send :initialize, [HostContext], host_context
-    event_processor_host
+  # Simple in-memory checkpoint store for single-instance deployments
+  class InMemoryCheckpointStore
+    include com.azure.messaging.eventhubs.CheckpointStore
+
+    def initialize
+      @checkpoints = java.util.concurrent.ConcurrentHashMap.new
+      @ownership = java.util.concurrent.ConcurrentHashMap.new
+    end
+
+    def listCheckpoints(fully_qualified_namespace, event_hub_name, consumer_group)
+      key = "#{fully_qualified_namespace}/#{event_hub_name}/#{consumer_group}"
+      checkpoints = @checkpoints.get(key) || java.util.ArrayList.new
+      reactor.core.publisher.Flux.fromIterable(checkpoints)
+    end
+
+    def updateCheckpoint(checkpoint)
+      key = "#{checkpoint.getFullyQualifiedNamespace}/#{checkpoint.getEventHubName}/#{checkpoint.getConsumerGroup}"
+      checkpoints = @checkpoints.computeIfAbsent(key) { java.util.concurrent.CopyOnWriteArrayList.new }
+      
+      # Remove existing checkpoint for this partition
+      checkpoints.removeIf { |c| c.getPartitionId == checkpoint.getPartitionId }
+      checkpoints.add(checkpoint)
+      
+      reactor.core.publisher.Mono.empty
+    end
+
+    def listOwnership(fully_qualified_namespace, event_hub_name, consumer_group)
+      key = "#{fully_qualified_namespace}/#{event_hub_name}/#{consumer_group}"
+      ownerships = @ownership.get(key) || java.util.ArrayList.new
+      reactor.core.publisher.Flux.fromIterable(ownerships)
+    end
+
+    def claimOwnership(requested_partition_ownerships)
+      claimed = java.util.ArrayList.new
+      requested_partition_ownerships.each do |ownership|
+        key = "#{ownership.getFullyQualifiedNamespace}/#{ownership.getEventHubName}/#{ownership.getConsumerGroup}"
+        ownerships = @ownership.computeIfAbsent(key) { java.util.concurrent.CopyOnWriteArrayList.new }
+        
+        # Simple claim - just accept all claims for in-memory store
+        ownerships.removeIf { |o| o.getPartitionId == ownership.getPartitionId }
+        ownerships.add(ownership)
+        claimed.add(ownership)
+      end
+      reactor.core.publisher.Flux.fromIterable(claimed)
+    end
   end
-
-  private
-
-  # This method is used to get around the fact that recent versions of jruby do not
-  # allow access to the package private protected method `getHostContext`
-  def get_host_context(event_processor_host)
-    call_private(event_processor_host, 'getHostContext')
-  end
-
-  def call_private(clazz, method)
-    method = clazz.java_class.declared_method(method)
-    method.accessible = true
-    method.invoke(clazz)
-  end
-
 end
