@@ -2,9 +2,8 @@
 require "logstash/devutils/rspec/spec_helper"
 require "logstash/inputs/azure_event_hubs"
 
-java_import com.microsoft.azure.eventprocessorhost.EventProcessorHost
-java_import com.microsoft.azure.eventprocessorhost.InMemoryCheckpointManager
-java_import com.microsoft.azure.eventprocessorhost.InMemoryLeaseManager
+java_import com.azure.messaging.eventhubs.EventProcessorClient
+java_import com.azure.messaging.eventhubs.EventProcessorClientBuilder
 
 describe LogStash::Inputs::AzureEventHubs do
 
@@ -56,75 +55,33 @@ describe LogStash::Inputs::AzureEventHubs do
       end
       it_behaves_like "an exploded Event Hub config", 2
 
-      it "it runs the Event Processor Host" do
+      it "it runs the Event Processor Client" do
         mock_queue = double("queue")
-        mock_host = double("event_processor_host")
-        mock_host_context = double("host_context")
-        completable_future = java.util.concurrent.CompletableFuture.new
-        #simulate work being done before completing the future
-        Thread.new do
-          sleep 2
-          completable_future.complete("")
-        end
+        mock_client = double("event_processor_client")
 
         # rspec has issues with counters and concurrent code, so use threadsafe counters instead
-        host_counter = java.util.concurrent.atomic.AtomicInteger.new
-        register_counter = java.util.concurrent.atomic.AtomicInteger.new
-        unregister_counter = java.util.concurrent.atomic.AtomicInteger.new
-        assertion_count = java.util.concurrent.atomic.AtomicInteger.new
+        start_counter = java.util.concurrent.atomic.AtomicInteger.new
+        stop_counter = java.util.concurrent.atomic.AtomicInteger.new
+        builder_counter = java.util.concurrent.atomic.AtomicInteger.new
 
-        allow(mock_host).to receive(:getHostContext) {mock_host_context}
-        allow(mock_host_context).to receive(:getEventHubPath) {"foo"}
-
-        expect(mock_host).to receive(:registerEventProcessorFactory).at_most(2).times {
-          register_counter.incrementAndGet
-          completable_future
+        expect(mock_client).to receive(:start).at_most(2).times {
+          start_counter.incrementAndGet
         }
-        expect(mock_host).to receive(:unregisterEventProcessor).at_most(2).times {
-          unregister_counter.incrementAndGet
-          completable_future
+        expect(mock_client).to receive(:stop).at_most(2).times {
+          stop_counter.incrementAndGet
         }
 
-        build_step_mock = double("final build step")
-        expect(build_step_mock).to receive(:build).at_most(2).times.and_return(mock_host)
-
-        executor_step = double("executor step")
-        expect(executor_step).to receive(:setExecutor).at_most(2).times.and_return(build_step_mock)
-
-        mock_connection_string = double("connection string")
-        expect(mock_connection_string).to receive(:useEventHubConnectionString).at_most(2).times {|event_hub_connection|
-          case event_hub_connection
-          when /.*event_hub_name0$/
-            expect(event_hub_connection).to eql(config['event_hub_connections'][0])
-          when /.*event_hub_name1$/
-            expect(event_hub_connection).to eql(config['event_hub_connections'][1])
-          end
-          executor_step
+        allow(input).to receive(:build_event_processor_client).at_most(2).times { |event_hub, event_hub_name, processor|
+          builder_counter.incrementAndGet
+          mock_client
         }
 
-        mock_builder = double("storage and lease managers")
-        expect(mock_builder).to receive(:useAzureStorageCheckpointLeaseManager).at_most(2).times {|storage_connection_str, storage_container, storage_blob_prefix|
-          case storage_container
-          when 'event_hub_name0'
-            assertion_count.incrementAndGet
-          when 'event_hub_name1'
-            assertion_count.incrementAndGet
-          end
-          mock_connection_string
-        }
-
-        expect(EventProcessorHost::EventProcessorHostBuilder).to receive(:newBuilder).at_most(2).times {|host_name, consumer_group|
-          expect(host_name).to start_with('logstash')
-          host_counter.incrementAndGet
-          mock_builder
-        }
         # signal the stop first since the run method blocks until stop is called.
         input.do_stop
         input.run(mock_queue)
-        expect(host_counter.get).to be == 2
-        expect(register_counter.get).to be == 2
-        expect(unregister_counter.get).to be == 2
-        expect(assertion_count.get).to be == 2
+        expect(builder_counter.get).to be == 2
+        expect(start_counter.get).to be == 2
+        expect(stop_counter.get).to be == 2
       end
 
       describe "single connection, no array syntax" do
@@ -228,90 +185,33 @@ describe LogStash::Inputs::AzureEventHubs do
         expect(exploded_config[2]['checkpoint_interval']).to be == 15
       end
 
-      it "it runs the Event Processor Host" do
+      it "it runs the Event Processor Client" do
         mock_queue = double("queue")
-        mock_host = double("event_processor_host")
-        mock_host_context = double("host_context")
-        completable_future = java.util.concurrent.CompletableFuture.new
-        #simulate work being done before completing the future
-        Thread.new do
-          sleep 2
-          completable_future.complete("")
-        end
+        mock_client = double("event_processor_client")
 
         # rspec has issues with counters and concurrent code, so use threadsafe counters instead
-        host_counter = java.util.concurrent.atomic.AtomicInteger.new
-        register_counter = java.util.concurrent.atomic.AtomicInteger.new
-        unregister_counter = java.util.concurrent.atomic.AtomicInteger.new
-        assertion_count = java.util.concurrent.atomic.AtomicInteger.new
-        allow(input).to receive(:get_host_context) {mock_host_context}
-        allow_any_instance_of(InMemoryLeaseManager).to receive(:java_send)
-        allow_any_instance_of(InMemoryCheckpointManager).to receive(:java_send)
+        start_counter = java.util.concurrent.atomic.AtomicInteger.new
+        stop_counter = java.util.concurrent.atomic.AtomicInteger.new
+        builder_counter = java.util.concurrent.atomic.AtomicInteger.new
 
-        allow(mock_host_context).to receive(:getEventHubPath) {"foo"}
-
-        expect(mock_host).to receive(:registerEventProcessorFactory).at_most(3).times {
-          register_counter.incrementAndGet
-          completable_future
+        expect(mock_client).to receive(:start).at_most(3).times {
+          start_counter.incrementAndGet
         }
-        expect(mock_host).to receive(:unregisterEventProcessor).at_most(3).times {
-          unregister_counter.incrementAndGet
-          completable_future
+        expect(mock_client).to receive(:stop).at_most(3).times {
+          stop_counter.incrementAndGet
         }
 
-        build_step_mock = double("final build step")
-        expect(build_step_mock).to receive(:build).at_most(3).times.and_return(mock_host)
-
-        executor_step = double("executor step")
-        expect(executor_step).to receive(:setExecutor).at_most(3).times.and_return(build_step_mock)
-
-        mock_connection_string = double("connection string")
-        expect(mock_connection_string).to receive(:useEventHubConnectionString).at_most(3).times {|event_hub_connection|
-          case event_hub_connection
-          when /.*event_hub_name0$/
-            expect(event_hub_connection).to eql(config['event_hubs'][0]['event_hub_name0']['event_hub_connections'][0].value)
-          when /.*event_hub_name1$/
-            expect(event_hub_connection).to eql(config['event_hubs'][1]['event_hub_name1']['event_hub_connections'][0].value)
-          end
-          executor_step
-        }
-
-        managers_mock = double("checkpoint and lease managers")
-        expect(managers_mock).to receive(:useUserCheckpointAndLeaseManagers).at_most(3).times {|checkpoint_mngr, lease_mngr|
-          assertion_count.incrementAndGet
-          mock_connection_string
-        }
-        expect(managers_mock).to receive(:useAzureStorageCheckpointLeaseManager).at_most(3).times {|storage_connection_str, storage_container, storage_blob_prefix|
-          case storage_container
-          when 'event_hub_name0'
-            assertion_count.incrementAndGet
-          when 'alt_container'
-            assertion_count.incrementAndGet
-          end
-          mock_connection_string
-        }
-
-        expect(EventProcessorHost::EventProcessorHostBuilder).to receive(:newBuilder).at_most(3).times {|host_name, consumer_group|
-          expect(host_name).to start_with('logstash')
-          host_counter.incrementAndGet
-          managers_mock
+        allow(input).to receive(:build_event_processor_client).at_most(3).times { |event_hub, event_hub_name, processor|
+          builder_counter.incrementAndGet
+          mock_client
         }
 
         # signal the stop first since the run method blocks until stop is called.
         input.do_stop
         input.run(mock_queue)
-        expect(host_counter.get).to be == 3
-        expect(register_counter.get).to be == 3
-        expect(unregister_counter.get).to be == 3
-        expect(assertion_count.get).to be == 3
-      end
-
-      it "can create an in memory EPH" do
-        #event_hub, event_hub_name, scheduled_executor_service
-        exploded_config = input.event_hubs_exploded
-        # During build step Azure libraries does a syntax check of EventHub connection string, so needs to be a pseudo real
-        exploded_config[0]['event_hub_connections'] = [::LogStash::Util::Password.new("Endpoint=sb://logstash.windows.net/;SharedAccessKeyName=activity-log-read-only;SharedAccessKey=blabla;EntityPath=ops-logs")]
-        input.create_in_memory_event_processor_host(exploded_config[0], exploded_config[0]['event_hubs'].first, nil)
+        expect(builder_counter.get).to be == 3
+        expect(start_counter.get).to be == 3
+        expect(stop_counter.get).to be == 3
       end
     end
 

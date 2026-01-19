@@ -1,3 +1,11 @@
+## 2.0.0
+  - Major: Migrated from legacy `azure-eventhubs` SDK to modern `azure-messaging-eventhubs` SDK (5.20.0)
+  - Uses `EventProcessorClient` instead of deprecated `EventProcessorHost`
+  - Uses `BlobCheckpointStore` for checkpoint management with Azure Blob Storage
+  - Updated Java compatibility to version 11
+  - Simplified codebase by removing unused classes (`ProcessorFactory`, `LookBackPositionProvider`, `NamedThreadFactory`)
+  - **Breaking Change**: Checkpoint format is different from the legacy SDK. If migrating from v1.x, existing checkpoints will not be recognized and processing will start from `initial_position`
+
 ## 1.5.3
   - Fix: With `config_mode => 'advanced'`, event hub-specific settings (`initial_position`, `max_batch_size`, `prefetch_count`, `receive_timeout`, `initial_position_look_back`) were being ignored and replaced with global defaults. These settings are now correctly applied per event hub [#104](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/104)
 
