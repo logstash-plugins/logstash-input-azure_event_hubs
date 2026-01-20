@@ -1,3 +1,6 @@
+## 1.6.0
+  - Added Azure Active Directory (AAD) authentication support using ADAL4J and `EventHubClient.createWithAzureActiveDirectory()`. New configuration options: `aad_tenant_id`, `aad_client_id`, `aad_client_secret`, `event_hub_namespace`. When using AAD auth, specify just the Event Hub name in `event_hub_connections`. Note: AAD mode uses in-memory checkpointing.
+
 ## 1.5.3
   - Fix: With `config_mode => 'advanced'`, event hub-specific settings (`initial_position`, `max_batch_size`, `prefetch_count`, `receive_timeout`, `initial_position_look_back`) were being ignored and replaced with global defaults. These settings are now correctly applied per event hub [#104](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/104)
 
