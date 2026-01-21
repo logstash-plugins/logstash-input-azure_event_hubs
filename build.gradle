@@ -41,6 +41,10 @@ dependencies {
     testImplementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.17.0' // provided by Logstash
 }
 
+// Exclude adal4j and its transitive dependencies from runtimeClasspath
+configurations.runtimeClasspath {
+    exclude group: 'com.microsoft.azure', module: 'adal4j'
+}
 
 task generateGemJarRequiresFile {
     doLast {
