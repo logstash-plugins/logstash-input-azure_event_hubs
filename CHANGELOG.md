@@ -1,3 +1,6 @@
+## 1.5.6
+  - [DOCS] Added recommendation to migrate to the Kafka integration plugin [#116](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/116)
+
 ## 1.5.5
   - Upgrades kotlin-stdlib dependency [#114](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/114)
 
