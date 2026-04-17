@@ -42,7 +42,7 @@ Benefits of switching to the Kafka input plugin:
 * **No storage costs for checkpoints.** The Kafka protocol handles offset tracking internally within the Azure Event Hubs service at no extra cost. You no longer need to provision, maintain, or pay for an Azure Blob Storage account.
 * **Better throughput.** The Kafka input plugin delivers 1.7x to 2.5x higher throughput compared to this plugin under the same conditions.
 
-Azure Event Hubs natively supports the https://learn.microsoft.com/en-us/azure/event-hubs/azure-event-hubs-kafka-overview[Apache Kafka protocol] on Standard, Premium, and Dedicated tiers.
+Azure Event Hubs natively supports the https://learn.microsoft.com/en-us/azure/event-hubs/azure-event-hubs-kafka-overview[Apache Kafka protocol] on Standard, Premium, and Dedicated tiers. The Basic tier does not support the Kafka interface. To use it, a subscription upgrade is needed.
 The https://www.elastic.co/guide/en/logstash/current/plugins-inputs-kafka.html[Kafka input plugin] (`logstash-input-kafka`) can connect directly to Azure Event Hubs with no extra Azure-side configuration, and is the recommended way to consume events.
 
 For the full migration guide, including multi-hub configurations, parameter mapping, proxy setup, and FAQ, see the blog post: https://www.elastic.co/observability-labs/blog/migrate-logstash-pipelines-from-azure-event-hubs-to-kafka-plugin[Migrate Logstash Pipelines from Azure Event Hubs to Kafka Input Plugin].
