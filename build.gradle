@@ -24,8 +24,8 @@ dependencies {
     implementation 'com.microsoft.azure:azure-eventhubs-eph:3.3.0'
     implementation 'com.microsoft.azure:azure-storage:8.6.6'
     constraints {
-        implementation 'com.fasterxml.jackson.core:jackson-core:2.21.2'
-        implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.2'
+        implementation 'com.fasterxml.jackson.core:jackson-core:2.21.4'
+        implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.4'
         implementation 'com.fasterxml.jackson.core:jackson-annotations:2.21'
         implementation 'com.google.code.gson:gson:2.8.9'
         implementation 'com.google.guava:guava:32.0.1-jre'
