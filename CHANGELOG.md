@@ -1,3 +1,6 @@
+## 1.5.8
+  - Update jackson dependency to 2.21.4 [#118](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/118)
+
 ## 1.5.7
   - Upgrades `jackson.core` to 2.21.2 and `nimbus-jose-jwt` to 10.9 versions. [#117](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/117)
 
