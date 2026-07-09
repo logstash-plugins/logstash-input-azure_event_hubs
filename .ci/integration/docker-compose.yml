@@ -1,7 +1,7 @@
 version: '3'
 
-# start testbed:  docker-compose up --force-recreate
-# manual:  docker-compose run logstash1 bash
+# start testbed:  docker compose up --force-recreate
+# manual:  docker compose run logstash1 bash
 
 services:
 

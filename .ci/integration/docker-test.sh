@@ -31,12 +31,11 @@ if [ "$ELASTIC_STACK_VERSION" ]; then
     source .ci/integration/env.sh
 
     export LS_ARGS="-f $@"
-    docker-compose -f .ci/integration/docker-compose.yml down
-    docker-compose -f .ci/integration/docker-compose.yml up --build --exit-code-from logstash1 --force-recreate
+    docker compose -f .ci/integration/docker-compose.yml down
+    docker compose -f .ci/integration/docker-compose.yml up --build --exit-code-from logstash1 --force-recreate
     # Need to manually stop
 else
     echo "Please set the ELASTIC_STACK_VERSION environment variable"
     echo "For example: export ELASTIC_STACK_VERSION=6.2.4"
     exit 1
 fi
-
