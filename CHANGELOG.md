@@ -1,3 +1,6 @@
+## 1.5.9
+  - Update jackson dependency to 2.21.6 [#121](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/121)
+
 ## 1.5.8
   - Update jackson dependency to 2.21.4 [#118](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/118)
 
