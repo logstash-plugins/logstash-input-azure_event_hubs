@@ -1,3 +1,6 @@
+## 1.5.10
+  - Update `proton-j` to 0.35.0 [#122](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/122)
+
 ## 1.5.9
   - Update jackson dependency to 2.21.6 [#121](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/121)
 
