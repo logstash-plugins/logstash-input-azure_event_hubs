@@ -1,3 +1,6 @@
+## 1.5.12
+  - Update jackson to 2.21.8 [#126](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/126)
+
 ## 1.5.11
   - Update jackson dependency to 2.21.7 and guava dependency to 33.7.2-jre [#125](https://github.com/logstash-plugins/logstash-input-azure_event_hubs/pull/125)
 
